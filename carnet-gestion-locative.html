@@ -1,0 +1,1473 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#F4F6F9">
+<title>Carnet — Gestion locative</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F4F6F9;
+  --surface:#FFFFFF;
+  --surface-2:#EEF2F6;
+  --text:#1B2531;
+  --text-dim:#63707C;
+  --border:#DEE4EA;
+  --primary:#0E4C86;
+  --primary-dark:#0A3A68;
+  --primary-soft:#E7F0F9;
+  --accent:#A9812F;
+  --success:#1E8E5F;
+  --success-soft:#E5F5ED;
+  --danger:#C0392B;
+  --danger-soft:#FBEAE8;
+  --warn:#B07A1E;
+  --warn-soft:#FAF1E1;
+  --shadow:0 1px 2px rgba(20,27,36,.05), 0 6px 16px rgba(20,27,36,.05);
+}
+[data-theme="dark"]{
+  --bg:#0F141A;
+  --surface:#171E26;
+  --surface-2:#1F2830;
+  --text:#E7ECF1;
+  --text-dim:#8A97A3;
+  --border:#2A3541;
+  --primary:#4A9EE8;
+  --primary-dark:#2E7BC4;
+  --primary-soft:rgba(74,158,232,.16);
+  --accent:#D2AE4D;
+  --success:#34C989;
+  --success-soft:rgba(52,201,137,.16);
+  --danger:#F0574A;
+  --danger-soft:rgba(240,87,74,.16);
+  --warn:#E3A83B;
+  --warn-soft:rgba(227,168,59,.16);
+  --shadow:0 1px 2px rgba(0,0,0,.3), 0 6px 20px rgba(0,0,0,.35);
+}
+*, *::before, *::after{ box-sizing:border-box; }
+html, body{ margin:0; padding:0; }
+body{
+  background:var(--bg); color:var(--text); font-family:'IBM Plex Sans',sans-serif;
+  min-height:100vh; -webkit-font-smoothing:antialiased;
+  transition:background .2s ease, color .2s ease;
+}
+h1,h2,h3{ font-family:'IBM Plex Sans',sans-serif; font-weight:600; letter-spacing:-.01em; margin:0 0 8px; }
+a{ color:inherit; text-decoration:none; }
+.hidden{ display:none !important; }
+.dim{ color:var(--text-dim); font-size:.88em; }
+.amount{ font-family:'IBM Plex Mono',monospace; font-variant-numeric:tabular-nums; color:var(--text); font-weight:600; }
+.empty{ color:var(--text-dim); font-style:italic; padding:12px 0; }
+
+.btn-primary{
+  background:var(--primary); color:#FFFFFF; border:none; padding:10px 18px; border-radius:8px;
+  font-family:'IBM Plex Sans'; font-weight:600; cursor:pointer; transition:background .15s ease; font-size:14px;
+}
+.btn-primary:hover{ background:var(--primary-dark); }
+.btn-ghost{
+  background:var(--surface); color:var(--text-dim); border:1px solid var(--border); padding:9px 16px; border-radius:8px;
+  font-family:'IBM Plex Sans'; cursor:pointer; transition:border-color .15s,color .15s; font-size:14px;
+}
+.btn-ghost:hover{ border-color:var(--primary); color:var(--primary); }
+.btn-icon{
+  background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:16px; padding:4px 6px; border-radius:6px;
+}
+.btn-icon:hover{ color:var(--danger); background:var(--danger-soft); }
+
+#auth-screen{
+  min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; background:var(--bg);
+}
+.auth-card{
+  width:100%; max-width:400px; background:var(--surface); border:1px solid var(--border);
+  border-radius:14px; padding:32px 28px; box-shadow:var(--shadow);
+}
+.brand{ display:flex; align-items:center; gap:10px; margin-bottom:4px; }
+.brand-mark{
+  width:36px; height:36px; border-radius:8px; background:var(--primary); color:#FFFFFF;
+  display:flex; align-items:center; justify-content:center; font-weight:700; font-size:18px; flex-shrink:0;
+}
+.brand h1{ font-size:24px; margin:0; }
+.brand-tagline{ color:var(--text-dim); font-size:13.5px; margin:0 0 22px; }
+.auth-tabs{ display:flex; gap:4px; background:var(--surface-2); border-radius:8px; padding:4px; margin-bottom:20px; }
+.auth-tab{
+  flex:1; background:none; border:none; color:var(--text-dim); padding:9px 0; border-radius:6px; cursor:pointer;
+  font-family:'IBM Plex Sans'; font-weight:600; font-size:13.5px; transition:background .15s,color .15s;
+}
+.auth-tab.active{ background:var(--surface); color:var(--primary); box-shadow:var(--shadow); }
+.auth-form label{ display:block; margin-bottom:14px; font-size:13px; color:var(--text-dim); }
+.auth-form input{ width:100%; margin-top:6px; }
+.auth-form .btn-primary{ width:100%; margin-top:6px; }
+.auth-error{ color:var(--danger); font-size:13px; min-height:16px; margin-top:10px; }
+
+.theme-toggle{ display:inline-flex; gap:3px; background:var(--surface-2); border:1px solid var(--border); border-radius:8px; padding:3px; }
+.theme-opt{
+  background:none; border:none; color:var(--text-dim); padding:6px 12px; border-radius:6px; cursor:pointer;
+  font-family:'IBM Plex Sans'; font-weight:600; font-size:12px; transition:background .15s,color .15s;
+}
+.theme-opt.active{ background:var(--surface); color:var(--primary); box-shadow:var(--shadow); }
+.auth-theme-row{ display:flex; justify-content:center; margin-bottom:18px; }
+
+input, select, textarea{
+  background:var(--surface); border:1px solid var(--border); color:var(--text);
+  border-radius:7px; padding:9px 11px; font-family:'IBM Plex Sans'; font-size:14px; width:100%;
+}
+input:focus, select:focus, textarea:focus{ outline:2px solid var(--primary); outline-offset:1px; border-color:var(--primary); }
+
+#app-shell{ display:flex; min-height:100vh; }
+.sidebar{
+  width:232px; background:var(--surface); border-right:1px solid var(--border);
+  display:flex; flex-direction:column; padding:22px 16px; flex-shrink:0;
+}
+.sidebar-brand{ display:flex; align-items:center; gap:10px; font-weight:700; font-size:18px; margin-bottom:30px; }
+.sidebar-nav{ display:flex; flex-direction:column; gap:2px; flex:1; }
+.sidebar-nav a{
+  padding:10px 12px; border-radius:7px; color:var(--text-dim); font-size:14.5px; font-weight:500;
+  border-left:3px solid transparent; transition:background .15s,color .15s;
+  display:flex; align-items:center; gap:11px;
+}
+.nav-icon{ width:17px; height:17px; flex-shrink:0; }
+.sidebar-nav a:hover{ background:var(--surface-2); color:var(--text); }
+.sidebar-nav a.active{ background:var(--primary-soft); color:var(--primary); border-left-color:var(--primary); }
+.sidebar-footer{ border-top:1px solid var(--border); padding-top:14px; }
+.landlord-name{ font-size:13px; color:var(--text-dim); margin-bottom:10px; }
+
+.main-col{ flex:1; display:flex; flex-direction:column; min-width:0; }
+.topbar{
+  display:flex; align-items:baseline; justify-content:space-between; padding:22px 32px 10px;
+  border-bottom:1px solid var(--border); flex-wrap:wrap; gap:6px; background:var(--bg);
+}
+.topbar-route{ font-size:21px; font-weight:600; }
+.topbar-date{ color:var(--text-dim); font-size:13px; text-transform:capitalize; }
+.view-root{ padding:24px 32px 100px; animation:fadeInUp .35s ease; }
+
+@keyframes fadeInUp{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;} }
+@media (prefers-reduced-motion:reduce){ .view-root, .card{ animation:none !important; } }
+
+.mobile-tabbar{ display:none; }
+
+.stat-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:22px; }
+.stat-card{ background:var(--surface); border:1px solid var(--border); border-top:3px solid var(--primary); border-radius:10px; padding:16px 18px; box-shadow:var(--shadow); }
+.stat-top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+.stat-icon{ width:30px; height:30px; border-radius:7px; background:var(--primary-soft); color:var(--primary); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.stat-icon svg{ width:16px; height:16px; }
+.stat-card.late .stat-icon{ background:var(--danger-soft); color:var(--danger); }
+.stat-label{ color:var(--text-dim); font-size:12.5px; text-transform:uppercase; letter-spacing:.05em; }
+.stat-value{ font-family:'IBM Plex Mono',monospace; font-size:25px; font-weight:600; }
+.stat-value.late{ color:var(--danger); }
+.stat-sub{ color:var(--text-dim); font-size:12px; margin-top:4px; }
+
+.panel-grid{ display:grid; grid-template-columns:1.4fr 1fr; gap:16px; margin-bottom:0; }
+
+.card{
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:10px; padding:18px 20px; margin-bottom:16px; animation:fadeInUp .35s ease; box-shadow:var(--shadow);
+}
+.card-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:14px; }
+.card-top{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:4px; }
+.row-actions{ display:flex; align-items:center; gap:10px; margin-top:10px; flex-wrap:wrap; }
+
+.ledger-row{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding:11px 0; border-bottom:1px solid var(--border); }
+.ledger-row:last-child{ border-bottom:none; }
+.ledger-row .amount{ display:flex; align-items:center; gap:8px; }
+
+.badge-stamp{
+  display:inline-flex; align-items:center; justify-content:center; padding:3px 11px;
+  border-radius:999px; font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.06em; font-weight:600;
+  text-transform:uppercase; white-space:nowrap; flex-shrink:0;
+}
+.badge-stamp.paid{ color:var(--success); background:var(--success-soft); }
+.badge-stamp.late{ color:var(--danger); background:var(--danger-soft); }
+.badge-stamp.vacant{ color:var(--text-dim); background:var(--surface-2); }
+.badge-stamp.occupied{ color:var(--primary); background:var(--primary-soft); }
+
+.view-header{ display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap; }
+
+.bar-chart{ display:flex; align-items:flex-end; gap:8px; height:140px; margin-top:12px; }
+.bar-col{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; gap:6px; }
+.bar{ width:100%; max-width:26px; background:linear-gradient(180deg,var(--primary),var(--primary-dark)); border-radius:4px 4px 0 0; min-height:4px; }
+.bar-label{ font-size:10px; color:var(--text-dim); }
+
+.method-row{ display:flex; align-items:center; gap:12px; padding:8px 0; }
+.method-row > span:first-child{ width:130px; font-size:13.5px; flex-shrink:0; }
+.method-bar-track{ flex:1; height:8px; background:var(--surface-2); border-radius:4px; overflow:hidden; }
+.method-bar-fill{ height:100%; background:var(--primary); border-radius:4px; }
+
+.data-table{ width:100%; border-collapse:collapse; }
+.data-table thead th{
+  text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-dim);
+  font-weight:600; padding:0 12px 10px; border-bottom:1px solid var(--border);
+}
+.data-table thead th.num{ text-align:right; }
+.data-table tbody td{ padding:12px; border-bottom:1px solid var(--border); font-size:13.5px; vertical-align:middle; }
+.data-table tbody tr:last-child td{ border-bottom:none; }
+.data-table tbody tr:hover{ background:var(--surface-2); }
+.data-table td.num{ text-align:right; font-family:'IBM Plex Mono',monospace; font-weight:600; }
+.data-table td.name{ font-weight:600; }
+.data-table td.actions{ text-align:right; white-space:nowrap; }
+@media (max-width:900px){
+  .data-table thead{ display:none; }
+  .data-table, .data-table tbody, .data-table tr, .data-table td{ display:block; width:100%; }
+  .data-table tbody tr{ padding:10px 0; border-bottom:1px solid var(--border); }
+  .data-table td{ border:none; padding:2px 0; }
+  .data-table td[data-label]{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
+  .data-table td[data-label]::before{ content:attr(data-label); color:var(--text-dim); font-size:12px; flex-shrink:0; }
+  .data-table td.name{ font-size:14.5px; }
+  .data-table td.name::before{ content:none; }
+  .data-table td.num{ text-align:right; }
+  .data-table td.actions{ display:flex; justify-content:flex-end; padding-top:6px; }
+  .data-table td.actions::before{ content:none; }
+}
+
+.modal-overlay{
+  position:fixed; inset:0; background:rgba(15,22,30,.5); display:flex; align-items:center; justify-content:center;
+  padding:20px; z-index:50; animation:fadeInUp .2s ease;
+}
+.modal-card{
+  background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:24px 26px;
+  width:100%; max-width:440px; max-height:88vh; overflow-y:auto; box-shadow:0 24px 60px rgba(15,22,30,.25);
+}
+.modal-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+.modal-close{ background:none; border:none; color:var(--text-dim); font-size:22px; cursor:pointer; line-height:1; }
+#modal-form label{ display:block; margin-bottom:14px; font-size:13px; color:var(--text-dim); }
+#modal-form input, #modal-form select, #modal-form textarea{ margin-top:6px; }
+.modal-actions{ display:flex; justify-content:flex-end; gap:10px; margin-top:6px; }
+
+#toast-container{ position:fixed; top:18px; right:18px; z-index:100; display:flex; flex-direction:column; gap:8px; }
+.toast{
+  background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--success); color:var(--text);
+  padding:11px 16px; border-radius:8px; font-size:13.5px; opacity:0; transform:translateX(20px); transition:all .3s ease;
+  box-shadow:var(--shadow); max-width:280px;
+}
+.toast.show{ opacity:1; transform:none; }
+.toast.err{ border-left-color:var(--danger); }
+
+.chat-msg{ margin-bottom:10px; max-width:85%; padding:9px 13px; border-radius:10px; font-size:13.5px; line-height:1.45; white-space:pre-wrap; }
+.chat-msg.user{ background:var(--primary); color:#FFFFFF; margin-left:auto; border-bottom-right-radius:2px; }
+.chat-msg.model{ background:var(--surface-2); border:1px solid var(--border); margin-right:auto; border-bottom-left-radius:2px; }
+
+.plan-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:14px; margin-bottom:16px; }
+.plan-card{ background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px; text-align:center; box-shadow:var(--shadow); }
+.plan-card.current{ border-color:var(--primary); box-shadow:0 0 0 1px var(--primary) inset; }
+.plan-price{ font-family:'IBM Plex Mono',monospace; font-size:25px; margin:8px 0 4px; color:var(--primary); font-weight:600; }
+.plan-price span{ font-family:'IBM Plex Sans'; font-size:12px; color:var(--text-dim); font-weight:400; }
+.plan-features{ list-style:none; padding:0; margin:12px 0 18px; color:var(--text-dim); font-size:13px; text-align:left; }
+.plan-features li{ padding:6px 0; border-bottom:1px solid var(--border); }
+.pay-box{ background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:14px 16px; margin:14px 0; }
+.pay-box .ref{ font-family:'IBM Plex Mono'; color:var(--primary); font-weight:600; }
+.btn-wave{
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  background:var(--success); color:#FFFFFF; font-weight:700;
+  padding:12px 18px; border-radius:9px; margin:12px 0; text-decoration:none; font-size:14.5px;
+  transition:background .15s ease;
+}
+.btn-wave:hover{ background:#177049; }
+
+@media (max-width:900px){
+  .sidebar{ display:none; }
+  .panel-grid{ grid-template-columns:1fr; }
+  .stat-grid{ grid-template-columns:repeat(2,1fr); }
+  .topbar{ padding:18px 16px 10px; }
+  .view-root{ padding:18px 16px 90px; }
+  .mobile-tabbar{
+    display:flex; position:fixed; bottom:0; left:0; right:0; background:var(--surface);
+    border-top:1px solid var(--border); z-index:40; box-shadow:0 -6px 20px rgba(15,22,30,.1);
+    padding-bottom:env(safe-area-inset-bottom, 0);
+  }
+  .mobile-tabbar a{
+    flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;
+    text-align:center; padding:9px 2px 8px; font-size:10px; color:var(--text-dim); font-weight:600;
+    border-top:2px solid transparent; transition:color .15s, border-color .15s, background .15s;
+  }
+  .tab-icon{ width:19px; height:19px; }
+  .mobile-tabbar a.active{ color:var(--primary); border-top-color:var(--primary); background:var(--primary-soft); }
+}
+@media (max-width:520px){
+  .stat-grid{ grid-template-columns:1fr 1fr; }
+  .auth-card{ padding:26px 20px; }
+}
+</style>
+</head>
+<body>
+
+<div id="toast-container"></div>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-theme-row">
+      <div class="theme-toggle">
+        <button type="button" class="theme-opt active" data-theme-choice="light">Clair</button>
+        <button type="button" class="theme-opt" data-theme-choice="dark">Sombre</button>
+      </div>
+    </div>
+    <div class="brand">
+      <span class="brand-mark">C</span>
+      <h1>Carnet</h1>
+    </div>
+    <p class="brand-tagline">Le carnet de loyer de vos biens, tenu à jour.</p>
+
+    <div class="auth-tabs">
+      <button type="button" class="auth-tab active" data-tab="login">Connexion</button>
+      <button type="button" class="auth-tab" data-tab="signup">Créer un compte</button>
+    </div>
+
+    <form id="login-form" class="auth-form">
+      <label>Email<input type="email" id="login-email" required autocomplete="email"></label>
+      <label>Mot de passe<input type="password" id="login-password" required autocomplete="current-password"></label>
+      <button type="submit" class="btn-primary" id="login-submit-btn">Se connecter</button>
+      <p class="auth-error" id="login-error"></p>
+    </form>
+
+    <form id="signup-form" class="auth-form hidden">
+      <label>Nom complet<input type="text" id="signup-name" required autocomplete="name"></label>
+      <label>Email<input type="email" id="signup-email" required autocomplete="email"></label>
+      <label>Téléphone<input type="tel" id="signup-phone" placeholder="07 00 00 00 00"></label>
+      <label>Mot de passe<input type="password" id="signup-password" required minlength="6" autocomplete="new-password"></label>
+      <button type="submit" class="btn-primary">Créer mon compte</button>
+      <p class="auth-error" id="signup-error"></p>
+    </form>
+  </div>
+</div>
+
+<!-- APP SHELL -->
+<div id="app-shell" class="hidden">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><span class="brand-mark">C</span><span>Carnet</span></div>
+    <nav class="sidebar-nav">
+      <a href="#/dashboard" data-route="dashboard"><svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="11" y="3" width="6" height="6" rx="1"/><rect x="3" y="11" width="6" height="6" rx="1"/><rect x="11" y="11" width="6" height="6" rx="1"/></svg>Tableau de bord</a>
+      <a href="#/biens" data-route="biens"><svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="3" width="12" height="14" rx="1"/><line x1="4" y1="8" x2="16" y2="8"/><line x1="4" y1="13" x2="16" y2="13"/><line x1="9" y1="3" x2="9" y2="17"/></svg>Biens</a>
+      <a href="#/locataires" data-route="locataires"><svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="7" r="3"/><path d="M4 17a6 6 0 0 1 12 0"/></svg>Locataires</a>
+      <a href="#/paiements" data-route="paiements"><svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="5" width="16" height="11" rx="2"/><path d="M2 9h16"/><circle cx="14" cy="13" r="1.2"/></svg>Paiements</a>
+      <a href="#/maintenance" data-route="maintenance"><svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="2.6"/><line x1="10" y1="2" x2="10" y2="5"/><line x1="10" y1="15" x2="10" y2="18"/><line x1="2" y1="10" x2="5" y2="10"/><line x1="15" y1="10" x2="18" y2="10"/><line x1="4.5" y1="4.5" x2="6.5" y2="6.5"/><line x1="13.5" y1="13.5" x2="15.5" y2="15.5"/><line x1="4.5" y1="15.5" x2="6.5" y2="13.5"/><line x1="13.5" y1="6.5" x2="15.5" y2="4.5"/></svg>Maintenance</a>
+      <a href="#/rapports" data-route="rapports"><svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="10" width="3" height="7" rx="0.5"/><rect x="8.5" y="5" width="3" height="12" rx="0.5"/><rect x="14" y="12" width="3" height="5" rx="0.5"/></svg>Rapports</a>
+      <a href="#/abonnement" data-route="abonnement"><svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="5" width="16" height="11" rx="2"/><line x1="2" y1="9" x2="18" y2="9"/></svg>Abonnement</a>
+      <a href="#/assistant" data-route="assistant"><svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="4" width="16" height="10" rx="3"/><polygon points="6,14 6,18 10,14" fill="currentColor" stroke="none"/></svg>Assistant IA</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="landlord-name" id="landlord-name-sidebar"></div>
+      <button id="logout-btn" class="btn-ghost">Déconnexion</button>
+    </div>
+  </aside>
+
+  <div class="main-col">
+    <header class="topbar">
+      <div class="topbar-route" id="topbar-title">Tableau de bord</div>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <div class="theme-toggle">
+          <button type="button" class="theme-opt active" data-theme-choice="light">Clair</button>
+          <button type="button" class="theme-opt" data-theme-choice="dark">Sombre</button>
+        </div>
+        <div class="topbar-date" id="topbar-date"></div>
+      </div>
+    </header>
+    <main id="view-root" class="view-root"></main>
+  </div>
+
+  <nav class="mobile-tabbar">
+    <a href="#/dashboard" data-route="dashboard"><svg class="tab-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="11" y="3" width="6" height="6" rx="1"/><rect x="3" y="11" width="6" height="6" rx="1"/><rect x="11" y="11" width="6" height="6" rx="1"/></svg><span>Accueil</span></a>
+    <a href="#/biens" data-route="biens"><svg class="tab-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="3" width="12" height="14" rx="1"/><line x1="4" y1="8" x2="16" y2="8"/><line x1="4" y1="13" x2="16" y2="13"/><line x1="9" y1="3" x2="9" y2="17"/></svg><span>Biens</span></a>
+    <a href="#/locataires" data-route="locataires"><svg class="tab-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="7" r="3"/><path d="M4 17a6 6 0 0 1 12 0"/></svg><span>Locataires</span></a>
+    <a href="#/paiements" data-route="paiements"><svg class="tab-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="5" width="16" height="11" rx="2"/><path d="M2 9h16"/><circle cx="14" cy="13" r="1.2"/></svg><span>Paiements</span></a>
+    <a href="#/maintenance" data-route="maintenance"><svg class="tab-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="2.6"/><line x1="10" y1="2" x2="10" y2="5"/><line x1="10" y1="15" x2="10" y2="18"/><line x1="2" y1="10" x2="5" y2="10"/><line x1="15" y1="10" x2="18" y2="10"/><line x1="4.5" y1="4.5" x2="6.5" y2="6.5"/><line x1="13.5" y1="13.5" x2="15.5" y2="15.5"/><line x1="4.5" y1="15.5" x2="6.5" y2="13.5"/><line x1="13.5" y1="6.5" x2="15.5" y2="4.5"/></svg><span>Maint.</span></a>
+    <a href="#/abonnement" data-route="abonnement"><svg class="tab-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="5" width="16" height="11" rx="2"/><line x1="2" y1="9" x2="18" y2="9"/></svg><span>Abo.</span></a>
+    <a href="#/assistant" data-route="assistant"><svg class="tab-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="4" width="16" height="10" rx="3"/><polygon points="6,14 6,18 10,14" fill="currentColor" stroke="none"/></svg><span>IA</span></a>
+  </nav>
+</div>
+
+<div id="modal-root"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+function showFatalError(msg){
+  const authScreen = document.getElementById('auth-screen');
+  const shell = document.getElementById('app-shell');
+  if (shell) shell.classList.add('hidden');
+  if (authScreen) {
+    authScreen.classList.remove('hidden');
+    authScreen.innerHTML = `<div class="auth-card"><div class="brand"><span class="brand-mark" style="background:var(--danger);">!</span><h1>Erreur</h1></div><p class="brand-tagline">${String(msg).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}</p></div>`;
+  }
+}
+let carnetBooted = false;
+window.addEventListener('error', e => { if (!carnetBooted && typeof firebase === 'undefined') showFatalError("Le SDK Firebase ne s'est pas chargé. Vérifie ta connexion internet et recharge la page. Si ça persiste, ouvre ce fichier via un lien http:// plutôt que depuis les téléchargements."); });
+window.addEventListener('unhandledrejection', e => {
+  if (carnetBooted) return;
+  const msg = (e.reason && (e.reason.message || e.reason.code)) || String(e.reason) || 'Erreur inconnue au démarrage.';
+  showFatalError(msg);
+});
+
+/* ======================================================
+   CARNET — Gestion locative (SaaS multi-propriétaires)
+   Remplace la config ci-dessous par celle de TON projet Firebase
+   (Console Firebase > Paramètres du projet > Tes applications)
+   ====================================================== */
+const firebaseConfig = {
+  apiKey: "AIzaSyBI5J1jtVdRa_2ZP_s3vao-QulBMpLWVmk",
+  authDomain: "hoopci.firebaseapp.com",
+  projectId: "hoopci",
+  storageBucket: "hoopci.firebasestorage.app",
+  messagingSenderId: "200813723178",
+  appId: "1:200813723178:web:91ab9102cf45fb11e94d53"
+};
+let auth, db;
+if (typeof firebase === 'undefined') {
+  showFatalError("Le SDK Firebase ne s'est pas chargé. Vérifie ta connexion internet et recharge la page. Si ça persiste, ouvre ce fichier via un lien http:// plutôt que depuis les téléchargements.");
+} else {
+  firebase.initializeApp(firebaseConfig);
+  auth = firebase.auth();
+  db = firebase.firestore();
+}
+const ADMIN_EMAIL = 'rkane9027@gmail.com';
+
+/* ---------- État global ---------- */
+let currentUser = null;
+let landlordData = null;
+let unsubscribers = [];
+let cache = { properties: [], tenants: [], payments: [], maintenance: [] };
+let demoMode = false;
+let demoRequests = [];
+let assistantMessages = [];
+
+/* ---------- Thème clair / sombre ---------- */
+function applyTheme(theme){
+  document.documentElement.setAttribute('data-theme', theme);
+  document.querySelectorAll('.theme-opt').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.themeChoice === theme);
+  });
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', theme === 'dark' ? '#0F141A' : '#F4F6F9');
+  try { localStorage.setItem('carnet-theme', theme); } catch (e) {}
+}
+function initTheme(){
+  let saved = null;
+  try { saved = localStorage.getItem('carnet-theme'); } catch (e) {}
+  applyTheme(saved === 'dark' ? 'dark' : 'light');
+}
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.theme-opt');
+  if (btn) applyTheme(btn.dataset.themeChoice);
+});
+initTheme();
+
+/* ---------- Utils ---------- */
+function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmtFCFA(n){ return (Number(n)||0).toLocaleString('fr-FR') + ' FCFA'; }
+function monthKey(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
+function trialDaysLeft(){
+  if (!landlordData?.abonnementExpire) return null;
+  const end = new Date(landlordData.abonnementExpire + 'T23:59:59');
+  const diffMs = end - new Date();
+  return Math.ceil(diffMs / 86400000);
+}
+function hasActiveAccess(){
+  if (demoMode) return true;
+  if (landlordData?.isAdmin) return true;
+  const statut = landlordData?.abonnementStatut || 'essai';
+  if (statut === 'actif' || statut === 'en_attente') return true;
+  if (statut === 'essai') {
+    const left = trialDaysLeft();
+    return left === null || left > 0;
+  }
+  return false;
+}
+function monthLabel(k){
+  const parts = String(k||'').split('-');
+  const noms = ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Août','Sep','Oct','Nov','Déc'];
+  const m = Number(parts[1]);
+  return m ? `${noms[m-1]} ${parts[0]}` : (k || '—');
+}
+function toast(msg, type){
+  const c = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = 'toast' + (type === 'err' ? ' err' : '');
+  el.textContent = msg;
+  c.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('show'));
+  setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 300); }, 2800);
+}
+function col(name){ return db.collection('landlords').doc(currentUser.uid).collection(name); }
+
+/* ---------- Couche démo (aperçu sans connexion) ---------- */
+function demoId(){ return 'demo_' + Math.random().toString(36).slice(2, 9); }
+function dbAdd(collectionName, data){
+  if (demoMode) {
+    const id = demoId();
+    cache[collectionName].push({ id, ...data });
+    router();
+    return Promise.resolve({ id });
+  }
+  return col(collectionName).add(data);
+}
+function dbUpdate(collectionName, id, data){
+  if (demoMode) {
+    const idx = cache[collectionName].findIndex(x => x.id === id);
+    if (idx >= 0) cache[collectionName][idx] = { ...cache[collectionName][idx], ...data };
+    router();
+    return Promise.resolve();
+  }
+  return col(collectionName).doc(id).update(data);
+}
+function dbDelete(collectionName, id){
+  if (demoMode) {
+    cache[collectionName] = cache[collectionName].filter(x => x.id !== id);
+    router();
+    return Promise.resolve();
+  }
+  return col(collectionName).doc(id).delete();
+}
+function loadDemoData(){
+  const today = new Date();
+  const mk = offsetMonths => monthKey(new Date(today.getFullYear(), today.getMonth() - offsetMonths, 1));
+  const d = (offsetMonths, day) => new Date(today.getFullYear(), today.getMonth() - offsetMonths, day).toISOString().slice(0, 10);
+
+  cache.properties = [
+    { id: demoId(), nom: 'Villa Riviera 3', quartier: 'Cocody', adresse: 'Riviera 3, Abidjan', type: 'Maison', loyerMensuel: 180000, statut: 'occupe' },
+    { id: demoId(), nom: 'Studio Aliou', quartier: 'Yopougon', adresse: 'Yopougon Selmer', type: 'Studio', loyerMensuel: 45000, statut: 'occupe' },
+    { id: demoId(), nom: 'Appart Marcory 12', quartier: 'Marcory', adresse: 'Marcory Résidentiel', type: 'Appartement', loyerMensuel: 95000, statut: 'vacant' },
+    { id: demoId(), nom: 'Boutique Adjamé', quartier: 'Adjamé', adresse: 'Adjamé Liberté', type: 'Boutique', loyerMensuel: 70000, statut: 'occupe' }
+  ];
+  cache.tenants = [
+    { id: demoId(), nom: 'Kouassi Aya', telephone: '07 01 22 33 44', propertyId: cache.properties[0].id, loyerMensuel: 180000, caution: 360000, dateEntree: '2025-03-01', statut: 'actif' },
+    { id: demoId(), nom: 'Ibrahim Traoré', telephone: '05 04 55 66 77', propertyId: cache.properties[1].id, loyerMensuel: 45000, caution: 90000, dateEntree: '2025-08-15', statut: 'actif' },
+    { id: demoId(), nom: 'Fatou Diabaté', telephone: '01 22 33 44 55', propertyId: cache.properties[3].id, loyerMensuel: 70000, caution: 140000, dateEntree: '2024-11-01', statut: 'actif' }
+  ];
+  cache.payments = [
+    { id: demoId(), tenantId: cache.tenants[0].id, propertyId: cache.properties[0].id, montant: 180000, methode: 'Wave', moisConcerne: mk(0), datePaiement: d(0, 3) },
+    { id: demoId(), tenantId: cache.tenants[1].id, propertyId: cache.properties[1].id, montant: 45000, methode: 'Orange Money', moisConcerne: mk(0), datePaiement: d(0, 5) },
+    { id: demoId(), tenantId: cache.tenants[0].id, propertyId: cache.properties[0].id, montant: 180000, methode: 'Wave', moisConcerne: mk(1), datePaiement: d(1, 2) },
+    { id: demoId(), tenantId: cache.tenants[1].id, propertyId: cache.properties[1].id, montant: 45000, methode: 'Moov Money', moisConcerne: mk(1), datePaiement: d(1, 4) },
+    { id: demoId(), tenantId: cache.tenants[2].id, propertyId: cache.properties[3].id, montant: 70000, methode: 'Espèces', moisConcerne: mk(2), datePaiement: d(2, 6) },
+    { id: demoId(), tenantId: cache.tenants[0].id, propertyId: cache.properties[0].id, montant: 180000, methode: 'Wave', moisConcerne: mk(2), datePaiement: d(2, 1) }
+  ];
+  cache.maintenance = [
+    { id: demoId(), propertyId: cache.properties[0].id, titre: "Fuite d'eau salle de bain", description: 'Robinet qui coule en continu depuis 2 jours', priorite: 'Haute', statut: 'ouvert', coutEstime: 15000, dateCreation: d(0, 2) },
+    { id: demoId(), propertyId: cache.properties[1].id, titre: 'Peinture façade', description: 'Repeindre le mur extérieur', priorite: 'Basse', statut: 'en_cours', coutEstime: 40000, dateCreation: d(1, 15) },
+    { id: demoId(), propertyId: cache.properties[3].id, titre: 'Serrure à changer', description: 'Serrure principale bloquée', priorite: 'Moyenne', statut: 'resolu', coutEstime: 8000, dateCreation: d(2, 10) }
+  ];
+}
+function enterDemoMode(){
+  demoMode = true;
+  currentUser = { uid: 'demo-preview', email: 'demo@carnet.local' };
+  const expire = new Date(); expire.setDate(expire.getDate() + 30);
+  landlordData = { nom: 'Aperçu démo', isAdmin: true, plan: 'pro', abonnementStatut: 'actif', abonnementExpire: expire.toISOString().slice(0, 10) };
+  demoRequests = [];
+  loadDemoData();
+  document.getElementById('landlord-name-sidebar').textContent = landlordData.nom + ' (mode démo)';
+  document.getElementById('auth-screen').classList.add('hidden');
+  document.getElementById('app-shell').classList.remove('hidden');
+  router();
+  toast('Mode démo activé — rien n\'est sauvegardé');
+}
+function exitDemoMode(){
+  demoMode = false;
+  currentUser = null; landlordData = null;
+  cache = { properties: [], tenants: [], payments: [], maintenance: [] };
+  demoRequests = [];
+  assistantMessages = [];
+  document.getElementById('app-shell').classList.add('hidden');
+  document.getElementById('auth-screen').classList.remove('hidden');
+}
+function updateDate(){
+  const d = new Date();
+  document.getElementById('topbar-date').textContent = d.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+}
+function translateAuthError(err){
+  const map = {
+    'auth/email-already-in-use':'Cet email est déjà utilisé.',
+    'auth/invalid-email':'Email invalide.',
+    'auth/weak-password':'Mot de passe trop court (6 caractères minimum).',
+    'auth/user-not-found':'Aucun compte avec cet email.',
+    'auth/wrong-password':'Mot de passe incorrect.',
+    'auth/invalid-credential':'Email ou mot de passe incorrect.'
+  };
+  return map[err.code] || err.message;
+}
+
+/* ---------- Modal générique ---------- */
+function openModal(title, bodyHTML, onSubmit, submitLabel){
+  const root = document.getElementById('modal-root');
+  root.innerHTML = `
+    <div class="modal-overlay" id="modal-overlay">
+      <div class="modal-card">
+        <div class="modal-header"><h3>${esc(title)}</h3><button type="button" class="modal-close" id="modal-close">&times;</button></div>
+        <form id="modal-form">
+          ${bodyHTML}
+          <div class="modal-actions">
+            <button type="button" class="btn-ghost" id="modal-cancel">Annuler</button>
+            <button type="submit" class="btn-primary">${esc(submitLabel || 'Enregistrer')}</button>
+          </div>
+        </form>
+      </div>
+    </div>`;
+  document.getElementById('modal-close').addEventListener('click', closeModal);
+  document.getElementById('modal-cancel').addEventListener('click', closeModal);
+  document.getElementById('modal-overlay').addEventListener('click', e => { if (e.target.id === 'modal-overlay') closeModal(); });
+  document.getElementById('modal-form').addEventListener('submit', e => { e.preventDefault(); onSubmit(new FormData(e.target)); });
+}
+function closeModal(){ document.getElementById('modal-root').innerHTML = ''; }
+
+/* ---------- Helpers de pré-remplissage (appelés depuis le HTML des modales) ---------- */
+function prefillTenantRent(sel){
+  const opt = sel.selectedOptions[0];
+  const rentInput = document.querySelector('#modal-form [name="loyerMensuel"]');
+  if (opt && opt.dataset.rent && rentInput && !rentInput.value) rentInput.value = opt.dataset.rent;
+}
+function prefillPaymentAmount(sel){
+  const opt = sel.selectedOptions[0];
+  const amt = document.querySelector('#modal-form [name="montant"]');
+  if (opt && opt.dataset.rent && amt) amt.value = opt.dataset.rent;
+}
+function updateMaintenanceStatus(id, statut){
+  dbUpdate('maintenance', id, { statut })
+    .then(() => toast('Statut mis à jour'))
+    .catch(err => toast('Erreur : ' + err.message, 'err'));
+}
+
+/* ======================================================
+   BIENS
+   ====================================================== */
+function renderBiens(){
+  const root = document.getElementById('view-root');
+  root.innerHTML = `
+    <div class="view-header"><button class="btn-primary" data-action="add-property">+ Ajouter un bien</button></div>
+    <div class="card-grid">
+      ${cache.properties.length === 0 ? `<p class="empty">Aucun bien enregistré. Ajoutez votre premier bien pour commencer.</p>` :
+        cache.properties.map(p => `
+          <div class="card">
+            <div class="card-top">
+              <strong>${esc(p.nom)}</strong>
+              <span class="badge-stamp ${p.statut === 'occupe' ? 'occupied' : 'vacant'}">${p.statut === 'occupe' ? 'Occupé' : 'Vacant'}</span>
+            </div>
+            <p class="dim">${esc(p.quartier || '')} · ${esc(p.type || '')}</p>
+            <p class="amount">${fmtFCFA(p.loyerMensuel)} / mois</p>
+            <div class="row-actions">
+              <button class="btn-ghost" data-action="edit-property" data-id="${p.id}">Modifier</button>
+              <button class="btn-icon" data-action="delete-property" data-id="${p.id}" title="Supprimer">🗑</button>
+            </div>
+          </div>`).join('')}
+    </div>`;
+}
+function openPropertyModal(existing){
+  const isEdit = !!existing;
+  openModal(isEdit ? 'Modifier le bien' : 'Ajouter un bien', `
+    <label>Nom du bien<input name="nom" value="${esc(existing?.nom || '')}" required placeholder="Ex : Villa Riviera 3"></label>
+    <label>Quartier<input name="quartier" value="${esc(existing?.quartier || '')}" required placeholder="Ex : Cocody, Yopougon..."></label>
+    <label>Adresse<input name="adresse" value="${esc(existing?.adresse || '')}" placeholder="Adresse complète"></label>
+    <label>Type
+      <select name="type">
+        ${['Studio','Appartement','Maison','Boutique','Autre'].map(t => `<option ${existing?.type === t ? 'selected' : ''}>${t}</option>`).join('')}
+      </select>
+    </label>
+    <label>Loyer mensuel (FCFA)<input name="loyerMensuel" type="number" min="0" value="${existing?.loyerMensuel ?? ''}" required></label>
+    <label>Statut
+      <select name="statut">
+        <option value="occupe" ${existing?.statut === 'occupe' ? 'selected' : ''}>Occupé</option>
+        <option value="vacant" ${existing?.statut === 'vacant' ? 'selected' : ''}>Vacant</option>
+      </select>
+    </label>
+  `, async fd => {
+    const data = {
+      nom: fd.get('nom').trim(), quartier: fd.get('quartier').trim(), adresse: fd.get('adresse').trim(),
+      type: fd.get('type'), loyerMensuel: Number(fd.get('loyerMensuel')), statut: fd.get('statut')
+    };
+    try {
+      if (isEdit) await dbUpdate('properties', existing.id, data);
+      else await dbAdd('properties', data);
+      closeModal(); toast(isEdit ? 'Bien mis à jour' : 'Bien ajouté');
+    } catch (err) { toast('Erreur : ' + err.message, 'err'); }
+  });
+}
+function deleteProperty(id){
+  if (!confirm('Supprimer ce bien ? Cette action est irréversible.')) return;
+  dbDelete('properties', id).then(() => toast('Bien supprimé')).catch(err => toast('Erreur : ' + err.message, 'err'));
+}
+
+/* ======================================================
+   LOCATAIRES
+   ====================================================== */
+function renderLocataires(){
+  const root = document.getElementById('view-root');
+  root.innerHTML = `
+    <div class="view-header"><button class="btn-primary" data-action="add-tenant">+ Ajouter un locataire</button></div>
+    <div class="card-grid">
+      ${cache.tenants.length === 0 ? `<p class="empty">Aucun locataire enregistré.</p>` :
+        cache.tenants.map(t => {
+          const p = cache.properties.find(x => x.id === t.propertyId);
+          return `<div class="card">
+            <div class="card-top">
+              <strong>${esc(t.nom)}</strong>
+              <span class="badge-stamp ${t.statut === 'actif' ? 'paid' : 'vacant'}">${t.statut === 'actif' ? 'Actif' : 'Parti'}</span>
+            </div>
+            <p class="dim">${esc(p ? p.nom : 'Bien supprimé')} · ${esc(t.telephone || '')}</p>
+            <p class="amount">${fmtFCFA(t.loyerMensuel)} / mois</p>
+            <div class="row-actions">
+              <button class="btn-ghost" data-action="edit-tenant" data-id="${t.id}">Modifier</button>
+              <button class="btn-icon" data-action="delete-tenant" data-id="${t.id}" title="Supprimer">🗑</button>
+            </div>
+          </div>`;
+        }).join('')}
+    </div>`;
+}
+function openTenantModal(existing){
+  const isEdit = !!existing;
+  if (cache.properties.length === 0) { toast('Ajoutez d\'abord un bien.', 'err'); return; }
+  openModal(isEdit ? 'Modifier le locataire' : 'Ajouter un locataire', `
+    <label>Nom complet<input name="nom" value="${esc(existing?.nom || '')}" required></label>
+    <label>Téléphone<input name="telephone" value="${esc(existing?.telephone || '')}" placeholder="07 00 00 00 00"></label>
+    <label>Bien associé
+      <select name="propertyId" onchange="prefillTenantRent(this)" required>
+        <option value="">— Choisir —</option>
+        ${cache.properties.map(p => `<option value="${p.id}" data-rent="${p.loyerMensuel}" ${existing?.propertyId === p.id ? 'selected' : ''}>${esc(p.nom)}</option>`).join('')}
+      </select>
+    </label>
+    <label>Loyer mensuel (FCFA)<input name="loyerMensuel" type="number" min="0" value="${existing?.loyerMensuel ?? ''}" required></label>
+    <label>Caution (FCFA)<input name="caution" type="number" min="0" value="${existing?.caution ?? ''}"></label>
+    <label>Date d'entrée<input name="dateEntree" type="date" value="${existing?.dateEntree || ''}"></label>
+    <label>Statut
+      <select name="statut">
+        <option value="actif" ${existing?.statut === 'actif' ? 'selected' : ''}>Actif</option>
+        <option value="parti" ${existing?.statut === 'parti' ? 'selected' : ''}>Parti</option>
+      </select>
+    </label>
+  `, async fd => {
+    const data = {
+      nom: fd.get('nom').trim(), telephone: fd.get('telephone').trim(), propertyId: fd.get('propertyId'),
+      loyerMensuel: Number(fd.get('loyerMensuel')), caution: Number(fd.get('caution') || 0),
+      dateEntree: fd.get('dateEntree'), statut: fd.get('statut')
+    };
+    try {
+      if (isEdit) await dbUpdate('tenants', existing.id, data);
+      else await dbAdd('tenants', data);
+      closeModal(); toast(isEdit ? 'Locataire mis à jour' : 'Locataire ajouté');
+    } catch (err) { toast('Erreur : ' + err.message, 'err'); }
+  });
+}
+function deleteTenant(id){
+  if (!confirm('Supprimer ce locataire ?')) return;
+  dbDelete('tenants', id).then(() => toast('Locataire supprimé')).catch(err => toast('Erreur : ' + err.message, 'err'));
+}
+
+/* ======================================================
+   PAIEMENTS
+   ====================================================== */
+function renderPaiements(){
+  const root = document.getElementById('view-root');
+  const sorted = [...cache.payments].sort((a, b) => (b.datePaiement || '').localeCompare(a.datePaiement || ''));
+  root.innerHTML = `
+    <div class="view-header">
+      <button class="btn-primary" data-action="add-payment">+ Enregistrer un paiement</button>
+      <button class="btn-ghost" data-action="export-payments">Exporter en CSV</button>
+    </div>
+    <div class="card">
+      <h3>Historique des paiements</h3>
+      ${sorted.length === 0 ? `<p class="empty">Aucun paiement enregistré pour l'instant.</p>` : `
+      <table class="data-table">
+        <thead><tr><th>Locataire</th><th>Méthode</th><th>Mois</th><th>Date</th><th class="num">Montant</th><th></th></tr></thead>
+        <tbody>
+          ${sorted.map(p => {
+            const t = cache.tenants.find(x => x.id === p.tenantId);
+            return `<tr>
+              <td class="name">${esc(t ? t.nom : 'Locataire supprimé')}</td>
+              <td data-label="Méthode">${esc(p.methode || '—')}</td>
+              <td data-label="Mois">${monthLabel(p.moisConcerne)}</td>
+              <td data-label="Date">${esc(p.datePaiement || '—')}</td>
+              <td class="num" data-label="Montant">${fmtFCFA(p.montant)}</td>
+              <td class="actions">
+                <button class="btn-icon" data-action="download-receipt" data-id="${p.id}" title="Télécharger la quittance">🧾</button>
+                <button class="btn-icon" data-action="delete-payment" data-id="${p.id}" title="Supprimer">🗑</button>
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`}
+    </div>`;
+}
+function openPaymentModal(){
+  const activeTenants = cache.tenants.filter(t => t.statut === 'actif');
+  if (activeTenants.length === 0) { toast('Ajoutez d\'abord un locataire actif.', 'err'); return; }
+  const todayISO = new Date().toISOString().slice(0, 10);
+  const curMonth = monthKey(new Date());
+  openModal('Enregistrer un paiement', `
+    <label>Locataire
+      <select name="tenantId" onchange="prefillPaymentAmount(this)" required>
+        <option value="">— Choisir —</option>
+        ${activeTenants.map(t => {
+          const p = cache.properties.find(x => x.id === t.propertyId);
+          return `<option value="${t.id}" data-rent="${t.loyerMensuel}">${esc(t.nom)} — ${esc(p ? p.nom : '')}</option>`;
+        }).join('')}
+      </select>
+    </label>
+    <label>Montant (FCFA)<input name="montant" type="number" min="0" required></label>
+    <label>Méthode
+      <select name="methode">
+        ${['Orange Money','MTN Money','Moov Money','Wave','Espèces','Virement bancaire'].map(m => `<option>${m}</option>`).join('')}
+      </select>
+    </label>
+    <label>Mois concerné<input name="moisConcerne" type="month" value="${curMonth}" required></label>
+    <label>Date du paiement<input name="datePaiement" type="date" value="${todayISO}" required></label>
+  `, async fd => {
+    const data = {
+      tenantId: fd.get('tenantId'), montant: Number(fd.get('montant')), methode: fd.get('methode'),
+      moisConcerne: fd.get('moisConcerne'), datePaiement: fd.get('datePaiement')
+    };
+    const t = cache.tenants.find(x => x.id === data.tenantId);
+    data.propertyId = t ? t.propertyId : null;
+    try { await dbAdd('payments', data); closeModal(); toast('Paiement enregistré'); }
+    catch (err) { toast('Erreur : ' + err.message, 'err'); }
+  }, 'Enregistrer');
+}
+function deletePayment(id){
+  if (!confirm('Supprimer ce paiement ?')) return;
+  dbDelete('payments', id).then(() => toast('Paiement supprimé')).catch(err => toast('Erreur : ' + err.message, 'err'));
+}
+function exportPaymentsCSV(){
+  const rows = [['Locataire', 'Bien', 'Montant', 'Méthode', 'Mois', 'Date']];
+  [...cache.payments].sort((a, b) => (a.datePaiement || '').localeCompare(b.datePaiement || '')).forEach(p => {
+    const t = cache.tenants.find(x => x.id === p.tenantId);
+    const prop = cache.properties.find(x => x.id === p.propertyId);
+    rows.push([t ? t.nom : '', prop ? prop.nom : '', p.montant, p.methode, p.moisConcerne, p.datePaiement]);
+  });
+  const csv = rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `paiements_${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+function generateReceipt(paymentId){
+  const p = cache.payments.find(x => x.id === paymentId);
+  if (!p) { toast('Paiement introuvable', 'err'); return; }
+  const t = cache.tenants.find(x => x.id === p.tenantId);
+  const prop = cache.properties.find(x => x.id === p.propertyId);
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a5' });
+  const W = doc.internal.pageSize.getWidth();
+  let y = 18;
+
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(16);
+  doc.text('Carnet', 14, y);
+  doc.setFontSize(10); doc.setFont('helvetica', 'normal'); doc.setTextColor(120);
+  doc.text('Gestion locative', 14, y + 5);
+  doc.setTextColor(0);
+  doc.setFontSize(12); doc.setFont('helvetica', 'bold');
+  doc.text('QUITTANCE DE LOYER', W - 14, y, { align: 'right' });
+  y += 14;
+  doc.setDrawColor(180); doc.line(14, y, W - 14, y);
+  y += 10;
+
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(11);
+  const line = (label, value) => { doc.setTextColor(120); doc.text(label, 14, y); doc.setTextColor(0); doc.text(String(value ?? '—'), 70, y); y += 7; };
+
+  line('Bailleur', landlordData?.nom || currentUser.email);
+  line('Locataire', t ? t.nom : 'Locataire supprimé');
+  line('Bien', prop ? `${prop.nom} (${prop.quartier || ''})` : '—');
+  line('Mois concerné', monthLabel(p.moisConcerne));
+  line('Méthode de paiement', p.methode);
+  line('Date du paiement', p.datePaiement);
+  line('Référence', p.id);
+  y += 4;
+  doc.setDrawColor(200); doc.line(14, y, W - 14, y);
+  y += 12;
+
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(14);
+  doc.text('Montant reçu :', 14, y);
+  doc.text(fmtFCFA(p.montant), W - 14, y, { align: 'right' });
+  y += 20;
+
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(140);
+  doc.text(`Quittance générée le ${new Date().toLocaleDateString('fr-FR')}`, 14, y);
+  y += 20;
+  doc.setTextColor(0); doc.setFontSize(10);
+  doc.text('Signature du bailleur', W - 14, y, { align: 'right' });
+
+  doc.save(`quittance_${(t ? t.nom : 'locataire').replace(/\s+/g, '_')}_${p.moisConcerne}.pdf`);
+}
+
+/* ======================================================
+   MAINTENANCE
+   ====================================================== */
+function renderMaintenance(){
+  const root = document.getElementById('view-root');
+  root.innerHTML = `
+    <div class="view-header"><button class="btn-primary" data-action="add-maintenance">+ Nouveau ticket</button></div>
+    <div class="card-grid">
+      ${cache.maintenance.length === 0 ? `<p class="empty">Aucun ticket de maintenance.</p>` :
+        cache.maintenance.map(m => {
+          const p = cache.properties.find(x => x.id === m.propertyId);
+          const prioClass = m.priorite === 'Haute' ? 'late' : (m.priorite === 'Moyenne' ? 'occupied' : 'paid');
+          return `<div class="card">
+            <div class="card-top">
+              <strong>${esc(m.titre)}</strong>
+              <span class="badge-stamp ${prioClass}">${esc(m.priorite)}</span>
+            </div>
+            <p class="dim">${esc(p ? p.nom : '—')}</p>
+            <p>${esc(m.description || '')}</p>
+            <div class="row-actions">
+              <select onchange="updateMaintenanceStatus('${m.id}', this.value)">
+                <option value="ouvert" ${m.statut === 'ouvert' ? 'selected' : ''}>Ouvert</option>
+                <option value="en_cours" ${m.statut === 'en_cours' ? 'selected' : ''}>En cours</option>
+                <option value="resolu" ${m.statut === 'resolu' ? 'selected' : ''}>Résolu</option>
+              </select>
+              <span class="amount">${m.coutEstime ? fmtFCFA(m.coutEstime) : '—'}</span>
+              <button class="btn-icon" data-action="delete-maintenance" data-id="${m.id}" title="Supprimer">🗑</button>
+            </div>
+          </div>`;
+        }).join('')}
+    </div>`;
+}
+function openMaintenanceModal(){
+  if (cache.properties.length === 0) { toast('Ajoutez d\'abord un bien.', 'err'); return; }
+  openModal('Nouveau ticket de maintenance', `
+    <label>Bien concerné
+      <select name="propertyId" required>
+        <option value="">— Choisir —</option>
+        ${cache.properties.map(p => `<option value="${p.id}">${esc(p.nom)}</option>`).join('')}
+      </select>
+    </label>
+    <label>Titre<input name="titre" required placeholder="Ex : Fuite d'eau salle de bain"></label>
+    <label>Description<textarea name="description" rows="3"></textarea></label>
+    <label>Priorité
+      <select name="priorite">
+        <option>Basse</option><option selected>Moyenne</option><option>Haute</option>
+      </select>
+    </label>
+    <label>Coût estimé (FCFA)<input name="coutEstime" type="number" min="0"></label>
+  `, async fd => {
+    const data = {
+      propertyId: fd.get('propertyId'), titre: fd.get('titre').trim(), description: fd.get('description').trim(),
+      priorite: fd.get('priorite'), coutEstime: Number(fd.get('coutEstime') || 0), statut: 'ouvert',
+      dateCreation: new Date().toISOString().slice(0, 10)
+    };
+    try { await dbAdd('maintenance', data); closeModal(); toast('Ticket créé'); }
+    catch (err) { toast('Erreur : ' + err.message, 'err'); }
+  }, 'Créer le ticket');
+}
+function deleteMaintenance(id){
+  if (!confirm('Supprimer ce ticket ?')) return;
+  dbDelete('maintenance', id).then(() => toast('Ticket supprimé')).catch(err => toast('Erreur : ' + err.message, 'err'));
+}
+
+/* ======================================================
+   TABLEAU DE BORD
+   ====================================================== */
+function renderDashboard(){
+  const root = document.getElementById('view-root');
+  const now = new Date();
+  const curKey = monthKey(now);
+  const paymentsThisMonth = cache.payments.filter(p => p.moisConcerne === curKey);
+  const revenue = paymentsThisMonth.reduce((s, p) => s + Number(p.montant || 0), 0);
+  const activeTenants = cache.tenants.filter(t => t.statut === 'actif');
+  const expected = activeTenants.reduce((s, t) => s + Number(t.loyerMensuel || 0), 0);
+  const paidTenantIds = new Set(paymentsThisMonth.map(p => p.tenantId));
+  const lateTenants = activeTenants.filter(t => !paidTenantIds.has(t.id));
+  const totalProps = cache.properties.length;
+  const occupied = cache.properties.filter(p => p.statut === 'occupe').length;
+  const occRate = totalProps ? Math.round(occupied / totalProps * 100) : 0;
+  const openTickets = cache.maintenance.filter(m => m.statut !== 'resolu').length;
+
+  const months = [];
+  for (let i = 5; i >= 0; i--) months.push(monthKey(new Date(now.getFullYear(), now.getMonth() - i, 1)));
+  const monthlyRevenue = months.map(k => cache.payments.filter(p => p.moisConcerne === k).reduce((s, p) => s + Number(p.montant || 0), 0));
+  const maxRev = Math.max(1, ...monthlyRevenue);
+
+  const recentPayments = [...cache.payments].sort((a, b) => (b.datePaiement || '').localeCompare(a.datePaiement || '')).slice(0, 6);
+
+  const trialStatut = landlordData?.abonnementStatut || 'essai';
+  const trialLeft = trialStatut === 'essai' ? trialDaysLeft() : null;
+  let trialBanner = '';
+  if (trialStatut === 'essai' && trialLeft !== null) {
+    if (trialLeft <= 0) {
+      trialBanner = `<div class="card" style="border-color:var(--danger);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+        <span><strong style="color:var(--danger);">Essai gratuit terminé.</strong> <span class="dim">Choisis un plan pour continuer à utiliser Carnet sans interruption.</span></span>
+        <a href="#/abonnement" class="btn-primary" style="text-decoration:none;">Voir les plans</a>
+      </div>`;
+    } else if (trialLeft <= 3) {
+      trialBanner = `<div class="card" style="border-color:var(--warn);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+        <span><strong style="color:var(--warn);">Essai gratuit — ${trialLeft} jour${trialLeft > 1 ? 's' : ''} restant${trialLeft > 1 ? 's' : ''}.</strong></span>
+        <a href="#/abonnement" class="btn-ghost" style="text-decoration:none;">Voir les plans</a>
+      </div>`;
+    } else {
+      trialBanner = `<div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+        <span class="dim">Essai gratuit — ${trialLeft} jours restants.</span>
+        <a href="#/abonnement" class="btn-ghost" style="text-decoration:none;">Voir les plans</a>
+      </div>`;
+    }
+  }
+
+  root.innerHTML = `
+    ${trialBanner}
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-top"><div class="stat-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="5" width="16" height="11" rx="2"/><path d="M2 9h16"/><circle cx="14" cy="13" r="1.2"/></svg></div></div>
+        <div class="stat-label">Revenu du mois</div>
+        <div class="stat-value">${fmtFCFA(revenue)}</div>
+        <div class="stat-sub">sur ${fmtFCFA(expected)} attendus</div>
+      </div>
+      <div class="stat-card late">
+        <div class="stat-top"><div class="stat-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="7.2"/><path d="M10 6v4.5l3 2"/></svg></div></div>
+        <div class="stat-label">Loyers en retard</div>
+        <div class="stat-value late">${lateTenants.length}</div>
+        <div class="stat-sub">locataire${lateTenants.length > 1 ? 's' : ''}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-top"><div class="stat-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="3" width="12" height="14" rx="1"/><line x1="4" y1="8" x2="16" y2="8"/><line x1="4" y1="13" x2="16" y2="13"/><line x1="9" y1="3" x2="9" y2="17"/></svg></div></div>
+        <div class="stat-label">Taux d'occupation</div>
+        <div class="stat-value">${occRate}%</div>
+        <div class="stat-sub">${occupied}/${totalProps} biens occupés</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-top"><div class="stat-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="2.6"/><line x1="10" y1="2" x2="10" y2="5"/><line x1="10" y1="15" x2="10" y2="18"/><line x1="2" y1="10" x2="5" y2="10"/><line x1="15" y1="10" x2="18" y2="10"/><line x1="4.5" y1="4.5" x2="6.5" y2="6.5"/><line x1="13.5" y1="13.5" x2="15.5" y2="15.5"/><line x1="4.5" y1="15.5" x2="6.5" y2="13.5"/><line x1="13.5" y1="6.5" x2="15.5" y2="4.5"/></svg></div></div>
+        <div class="stat-label">Maintenance</div>
+        <div class="stat-value">${openTickets}</div>
+        <div class="stat-sub">ticket${openTickets > 1 ? 's' : ''} ouvert${openTickets > 1 ? 's' : ''}</div>
+      </div>
+    </div>
+
+    <div class="panel-grid">
+      <div class="card">
+        <h3>Revenus — 6 derniers mois</h3>
+        <div class="bar-chart">
+          ${months.map((k, i) => `
+            <div class="bar-col">
+              <div class="bar" style="height:${Math.max(4, monthlyRevenue[i] / maxRev * 100)}%" title="${fmtFCFA(monthlyRevenue[i])}"></div>
+              <div class="bar-label">${monthLabel(k)}</div>
+            </div>`).join('')}
+        </div>
+      </div>
+      <div class="card">
+        <h3>En retard ce mois</h3>
+        ${lateTenants.length === 0 ? `<p class="empty">Tous les loyers actifs sont à jour.</p>` :
+          lateTenants.map(t => `
+            <div class="ledger-row">
+              <span>${esc(t.nom)}</span>
+              <span class="amount">${fmtFCFA(t.loyerMensuel)}</span>
+            </div>`).join('')}
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Derniers paiements</h3>
+      ${recentPayments.length === 0 ? `<p class="empty">Aucun paiement enregistré pour l'instant.</p>` : `
+      <table class="data-table">
+        <thead><tr><th>Locataire</th><th>Bien</th><th>Mois</th><th class="num">Montant</th></tr></thead>
+        <tbody>
+          ${recentPayments.map(p => {
+            const t = cache.tenants.find(x => x.id === p.tenantId);
+            const prop = cache.properties.find(x => x.id === (t ? t.propertyId : p.propertyId));
+            return `<tr>
+              <td class="name">${esc(t ? t.nom : '—')}</td>
+              <td data-label="Bien">${esc(prop ? prop.nom : '—')}</td>
+              <td data-label="Mois">${monthLabel(p.moisConcerne)}</td>
+              <td class="num" data-label="Montant">${fmtFCFA(p.montant)}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`}
+    </div>`;
+}
+
+/* ======================================================
+   RAPPORTS
+   ====================================================== */
+function renderRapports(){
+  const root = document.getElementById('view-root');
+  const now = new Date();
+  const months = [];
+  for (let i = 11; i >= 0; i--) months.push(monthKey(new Date(now.getFullYear(), now.getMonth() - i, 1)));
+  const monthlyRevenue = months.map(k => cache.payments.filter(p => p.moisConcerne === k).reduce((s, p) => s + Number(p.montant || 0), 0));
+  const maxRev = Math.max(1, ...monthlyRevenue);
+
+  const methodTotals = {};
+  cache.payments.forEach(p => { methodTotals[p.methode] = (methodTotals[p.methode] || 0) + Number(p.montant || 0); });
+  const totalAll = Object.values(methodTotals).reduce((a, b) => a + b, 0) || 1;
+
+  root.innerHTML = `
+    <div class="card">
+      <h3>Revenus — 12 derniers mois</h3>
+      <div class="bar-chart">
+        ${months.map((k, i) => `
+          <div class="bar-col">
+            <div class="bar" style="height:${Math.max(4, monthlyRevenue[i] / maxRev * 100)}%" title="${fmtFCFA(monthlyRevenue[i])}"></div>
+            <div class="bar-label">${monthLabel(k)}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+    <div class="card">
+      <h3>Répartition par méthode de paiement</h3>
+      ${Object.keys(methodTotals).length === 0 ? `<p class="empty">Pas encore de données.</p>` :
+        Object.entries(methodTotals).sort((a, b) => b[1] - a[1]).map(([m, total]) => `
+          <div class="method-row">
+            <span>${esc(m)}</span>
+            <div class="method-bar-track"><div class="method-bar-fill" style="width:${Math.round(total / totalAll * 100)}%"></div></div>
+            <span class="amount">${fmtFCFA(total)}</span>
+          </div>`).join('')}
+    </div>
+    <div class="view-header"><button class="btn-ghost" data-action="export-payments">Exporter tous les paiements (CSV)</button></div>`;
+}
+
+/* ======================================================
+   ABONNEMENT (pricing + flow Wave manuel)
+   ====================================================== */
+const PLANS = {
+  essentiel: { nom: 'Essentiel', prix: 2000, biens: 'Jusqu\'à 10 biens', features: ['Suivi loyers & paiements', 'Locataires illimités', 'Maintenance', 'Export CSV'], waveLink: 'https://pay.wave.com/m/M_ci_OaBqxSO_TLoN/c/ci/?amount=2000' },
+  pro: { nom: 'Pro', prix: 7000, biens: 'Biens illimités', features: ['Tout Essentiel', 'Biens illimités', 'Rapports avancés', 'Support prioritaire'], waveLink: 'https://pay.wave.com/m/M_ci_OaBqxSO_TLoN/c/ci/?amount=7000' }
+};
+
+function renderAbonnement(){
+  const root = document.getElementById('view-root');
+  const plan = landlordData?.plan;
+  const statut = landlordData?.abonnementStatut || 'essai';
+  const expire = landlordData?.abonnementExpire;
+  const daysLeft = statut === 'essai' ? trialDaysLeft() : null;
+  const trialExpired = statut === 'essai' && daysLeft !== null && daysLeft <= 0;
+
+  let statusLabel, statusClass;
+  if (statut === 'actif') { statusLabel = 'Actif'; statusClass = 'paid'; }
+  else if (statut === 'en_attente') { statusLabel = 'En attente de validation'; statusClass = 'occupied'; }
+  else if (trialExpired) { statusLabel = 'Essai gratuit terminé'; statusClass = 'late'; }
+  else { statusLabel = `Essai gratuit — ${daysLeft} jour${daysLeft > 1 ? 's' : ''} restant${daysLeft > 1 ? 's' : ''}`; statusClass = 'occupied'; }
+
+  root.innerHTML = `
+    <div class="card">
+      <h3>Ton abonnement</h3>
+      <p>Statut actuel : <span class="badge-stamp ${statusClass}">${statusLabel}</span></p>
+      ${plan ? `<p class="dim">Plan : ${esc(PLANS[plan]?.nom || plan)}${expire && statut === 'actif' ? ' · Renouvellement : ' + esc(expire) : ''}</p>` :
+        statut === 'essai' ? `<p class="dim">${trialExpired ? "Ton essai gratuit de 7 jours est terminé — choisis un plan ci-dessous pour continuer." : `Essai gratuit jusqu'au ${esc(expire || '—')}.`}</p>` :
+        `<p class="dim">Aucun plan payant actif pour l'instant.</p>`}
+    </div>
+
+    <div class="plan-grid">
+      ${Object.entries(PLANS).map(([key, pl]) => `
+        <div class="plan-card ${plan === key ? 'current' : ''}">
+          <h3>${esc(pl.nom)}</h3>
+          <div class="plan-price">${pl.prix.toLocaleString('fr-FR')} <span>FCFA / mois</span></div>
+          <p class="dim">${esc(pl.biens)}</p>
+          <ul class="plan-features">${pl.features.map(f => `<li>${esc(f)}</li>`).join('')}</ul>
+          <button class="btn-primary" data-action="request-plan" data-id="${key}">Choisir ce plan</button>
+        </div>`).join('')}
+    </div>`;
+}
+
+function openPlanRequestModal(planKey){
+  const pl = PLANS[planKey];
+  if (!pl) return;
+  const ref = `CARNET-${currentUser.uid.slice(0, 5).toUpperCase()}-${planKey.toUpperCase()}`;
+  openModal(`Passer au plan ${pl.nom}`, `
+    <div class="pay-box">
+      <p>Paiement de <strong>${pl.prix.toLocaleString('fr-FR')} FCFA</strong> via Wave :</p>
+      <a href="${pl.waveLink}" target="_blank" rel="noopener" class="btn-wave">💳 Payer ${pl.prix.toLocaleString('fr-FR')} FCFA avec Wave</a>
+      <p class="dim" style="margin-top:10px;">Reviens confirmer ci-dessous une fois le paiement effectué. Référence : <span class="ref">${ref}</span></p>
+      <p class="dim">Ton abonnement sera activé après vérification manuelle du paiement (sous 24h).</p>
+    </div>
+    <input type="hidden" name="plan" value="${planKey}">
+    <input type="hidden" name="reference" value="${ref}">
+  `, async fd => {
+    try {
+      if (demoMode) {
+        demoRequests.push({
+          id: demoId(), landlordId: currentUser.uid, landlordNom: landlordData?.nom || currentUser.email,
+          landlordEmail: currentUser.email, plan: fd.get('plan'), montant: pl.prix, reference: fd.get('reference'),
+          statut: 'en_attente', dateCreation: new Date().toISOString().slice(0, 10)
+        });
+        landlordData.abonnementStatut = 'en_attente';
+      } else {
+        await db.collection('subscriptionRequests').add({
+          landlordId: currentUser.uid,
+          landlordNom: landlordData?.nom || currentUser.email,
+          landlordEmail: currentUser.email,
+          plan: fd.get('plan'),
+          montant: pl.prix,
+          reference: fd.get('reference'),
+          statut: 'en_attente',
+          dateCreation: new Date().toISOString().slice(0, 10)
+        });
+        await db.collection('landlords').doc(currentUser.uid).update({ abonnementStatut: 'en_attente' });
+      }
+      closeModal(); toast('Demande envoyée, en attente de validation'); router();
+    } catch (err) { toast('Erreur : ' + err.message, 'err'); }
+  }, 'J\'ai payé, je confirme');
+}
+
+
+/* ======================================================
+   ASSISTANT IA (Gemini — clé unique partagée)
+   Remplace REMPLACE_MOI par ta clé Gemini (aistudio.google.com)
+   ⚠️ Cette clé sera visible dans le code par n'importe qui.
+   Restreins-la par domaine (HTTP referrer) dans Google Cloud Console.
+   ====================================================== */
+const GEMINI_MODEL = 'gemini-2.5-flash';
+const GEMINI_API_KEY = 'AQ.Ab8RN6KgdxaaXBevhAjgIhIWvd8XaNo1b0IMvqagzf5kSbNlAw';
+
+function buildDataContext(){
+  const now = new Date();
+  const curKey = monthKey(now);
+  const paymentsThisMonth = cache.payments.filter(p => p.moisConcerne === curKey);
+  const activeTenants = cache.tenants.filter(t => t.statut === 'actif');
+  const paidIds = new Set(paymentsThisMonth.map(p => p.tenantId));
+  const revenue = paymentsThisMonth.reduce((s, p) => s + Number(p.montant || 0), 0);
+  const expected = activeTenants.reduce((s, t) => s + Number(t.loyerMensuel || 0), 0);
+  const occupied = cache.properties.filter(p => p.statut === 'occupe').length;
+
+  const lines = [];
+  lines.push(`Date actuelle : ${now.toLocaleDateString('fr-FR')}`);
+  lines.push(`Biens (${cache.properties.length}) :`);
+  cache.properties.forEach(p => lines.push(`- ${p.nom} (${p.quartier}, ${p.type}) : ${p.statut === 'occupe' ? 'occupé' : 'vacant'}, loyer ${fmtFCFA(p.loyerMensuel)}`));
+  lines.push(`Locataires actifs (${activeTenants.length}) :`);
+  activeTenants.forEach(t => {
+    const p = cache.properties.find(x => x.id === t.propertyId);
+    lines.push(`- ${t.nom} (${p ? p.nom : '—'}) : loyer ${fmtFCFA(t.loyerMensuel)}, ${paidIds.has(t.id) ? 'à jour ce mois' : 'EN RETARD ce mois'}`);
+  });
+  lines.push(`Revenu perçu ce mois : ${fmtFCFA(revenue)} sur ${fmtFCFA(expected)} attendus`);
+  lines.push(`Biens occupés : ${occupied}/${cache.properties.length}`);
+  const openTickets = cache.maintenance.filter(m => m.statut !== 'resolu');
+  lines.push(`Tickets maintenance ouverts (${openTickets.length}) :`);
+  openTickets.forEach(m => {
+    const p = cache.properties.find(x => x.id === m.propertyId);
+    lines.push(`- ${m.titre} (${p ? p.nom : '—'}), priorité ${m.priorite}, statut ${m.statut}`);
+  });
+  return lines.join('\n');
+}
+
+async function askGeminiAssistant(question){
+  if (!GEMINI_API_KEY || GEMINI_API_KEY === 'REMPLACE_MOI') throw new Error('Clé API Gemini non configurée dans le code.');
+  const context = buildDataContext();
+  const body = {
+    system_instruction: {
+      parts: [{ text: `Tu es l'assistant intégré à Carnet, une app de gestion locative pour des propriétaires en Côte d'Ivoire. Réponds en français, de façon concise et directe, en te basant UNIQUEMENT sur les données ci-dessous. Si l'information n'y est pas, dis-le clairement plutôt que d'inventer.\n\nDonnées actuelles du propriétaire :\n${context}` }]
+    },
+    contents: [{ role: 'user', parts: [{ text: question }] }]
+  };
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_API_KEY },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Gemini (${res.status}) : ${errText.slice(0, 150)}`);
+  }
+  const data = await res.json();
+  return data?.candidates?.[0]?.content?.parts?.map(p => p.text).join('') || 'Pas de réponse.';
+}
+
+function renderAssistant(){
+  const root = document.getElementById('view-root');
+  const configured = GEMINI_API_KEY && GEMINI_API_KEY !== 'REMPLACE_MOI';
+  const access = hasActiveAccess();
+  root.innerHTML = `
+    <div class="card">
+      <h3>Assistant IA (Gemini)</h3>
+      ${!access ? `<p class="dim">Ton essai gratuit est terminé. <a href="#/abonnement" style="color:var(--primary);font-weight:600;">Choisis un plan</a> pour continuer à utiliser l'assistant.</p>` :
+        configured ? `<p class="dim">Pose une question sur tes biens, locataires, paiements ou retards.</p>` :
+        `<p class="dim">La clé API Gemini n'est pas encore configurée dans le code (variable GEMINI_API_KEY).</p>`}
+    </div>
+    ${configured && access ? `
+    <div class="card" id="chat-window" style="max-height:50vh;overflow-y:auto;">
+      ${assistantMessages.length === 0 ? `<p class="empty">Essaie : "Qui est en retard ce mois ?" ou "Quel est mon revenu ce mois-ci ?"</p>` :
+        assistantMessages.map(m => `<div class="chat-msg ${m.role}">${esc(m.text)}</div>`).join('')}
+    </div>
+    <div class="row-actions">
+      <input type="text" id="assistant-input" placeholder="Pose ta question..." style="flex:1;" onkeydown="if(event.key==='Enter'){sendAssistantMessage();}">
+      <button class="btn-primary" data-action="send-assistant">Envoyer</button>
+    </div>` : ''}`;
+  const chatWin = document.getElementById('chat-window');
+  if (chatWin) chatWin.scrollTop = chatWin.scrollHeight;
+}
+
+async function sendAssistantMessage(){
+  const input = document.getElementById('assistant-input');
+  const q = input?.value.trim();
+  if (!q) return;
+  assistantMessages.push({ role: 'user', text: q });
+  input.value = '';
+  renderAssistant();
+  try {
+    const answer = await askGeminiAssistant(q);
+    assistantMessages.push({ role: 'model', text: answer });
+  } catch (err) {
+    assistantMessages.push({ role: 'model', text: 'Erreur : ' + err.message });
+  }
+  renderAssistant();
+}
+
+/* ======================================================
+   ROUTAGE
+   ====================================================== */
+const routeTitles = { dashboard: 'Tableau de bord', biens: 'Biens', locataires: 'Locataires', paiements: 'Paiements', maintenance: 'Maintenance', rapports: 'Rapports', abonnement: 'Abonnement', assistant: 'Assistant IA' };
+const routes = { dashboard: renderDashboard, biens: renderBiens, locataires: renderLocataires, paiements: renderPaiements, maintenance: renderMaintenance, rapports: renderRapports, abonnement: renderAbonnement, assistant: renderAssistant };
+
+function router(){
+  if (!currentUser) return;
+  const hash = location.hash.replace('#/', '') || 'dashboard';
+  let route = routes[hash] ? hash : 'dashboard';
+  document.querySelectorAll('[data-route]').forEach(el => el.classList.toggle('active', el.dataset.route === route));
+  document.getElementById('topbar-title').textContent = routeTitles[route];
+  routes[route]();
+}
+
+function showTrialBlockedModal(){
+  openModal('Essai gratuit terminé', `
+    <p class="dim">Ton essai gratuit de 7 jours est terminé. Choisis un plan pour continuer à ajouter des biens, locataires, paiements, tickets, ou utiliser l'assistant IA. Tes données actuelles restent intactes et consultables.</p>
+  `, () => { closeModal(); location.hash = '#/abonnement'; }, 'Voir les plans');
+}
+
+const GATED_ACTIONS = new Set(['add-property', 'add-tenant', 'add-payment', 'add-maintenance', 'send-assistant']);
+
+function onViewClick(e){
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  const action = btn.dataset.action, id = btn.dataset.id;
+  if (GATED_ACTIONS.has(action) && !hasActiveAccess()) { showTrialBlockedModal(); return; }
+  const map = {
+    'add-property': () => openPropertyModal(),
+    'edit-property': () => openPropertyModal(cache.properties.find(p => p.id === id)),
+    'delete-property': () => deleteProperty(id),
+    'add-tenant': () => openTenantModal(),
+    'edit-tenant': () => openTenantModal(cache.tenants.find(t => t.id === id)),
+    'delete-tenant': () => deleteTenant(id),
+    'add-payment': () => openPaymentModal(),
+    'delete-payment': () => deletePayment(id),
+    'download-receipt': () => generateReceipt(id),
+    'export-payments': () => exportPaymentsCSV(),
+    'add-maintenance': () => openMaintenanceModal(),
+    'delete-maintenance': () => deleteMaintenance(id),
+    'send-assistant': () => sendAssistantMessage(),
+    'request-plan': () => openPlanRequestModal(id),
+  };
+  if (map[action]) map[action]();
+}
+
+/* ======================================================
+   AUTHENTIFICATION & LISTENERS TEMPS RÉEL
+   ====================================================== */
+function attachListeners(){
+  unsubscribers.push(col('properties').onSnapshot(snap => {
+    cache.properties = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.nom || '').localeCompare(b.nom || ''));
+    router();
+  }, err => toast('Erreur de synchronisation : ' + err.message, 'err')));
+
+  unsubscribers.push(col('tenants').onSnapshot(snap => {
+    cache.tenants = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.nom || '').localeCompare(b.nom || ''));
+    router();
+  }, err => toast('Erreur de synchronisation : ' + err.message, 'err')));
+
+  unsubscribers.push(col('payments').onSnapshot(snap => {
+    cache.payments = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    router();
+  }, err => toast('Erreur de synchronisation : ' + err.message, 'err')));
+
+  unsubscribers.push(col('maintenance').onSnapshot(snap => {
+    cache.maintenance = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    router();
+  }, err => toast('Erreur de synchronisation : ' + err.message, 'err')));
+}
+function detachListeners(){
+  unsubscribers.forEach(u => u());
+  unsubscribers = [];
+  cache = { properties: [], tenants: [], payments: [], maintenance: [] };
+  assistantMessages = [];
+}
+
+if (auth) {
+  auth.onAuthStateChanged(async user => {
+  carnetBooted = true;
+  if (user) {
+    currentUser = user;
+    try {
+      const ref = db.collection('landlords').doc(user.uid);
+      const doc = await ref.get();
+      if (doc.exists) {
+        landlordData = doc.data();
+      } else {
+        const isOwnerAccount = (user.email || '').trim().toLowerCase() === ADMIN_EMAIL;
+        const trialEnd = new Date(); trialEnd.setDate(trialEnd.getDate() + 7);
+        landlordData = {
+          nom: user.email, email: user.email, telephone: '',
+          plan: null, abonnementStatut: 'essai', abonnementExpire: trialEnd.toISOString().slice(0, 10), isAdmin: isOwnerAccount
+        };
+        await ref.set(landlordData);
+      }
+    } catch (e) {
+      landlordData = { nom: user.email };
+    }
+    document.getElementById('landlord-name-sidebar').textContent = landlordData.nom || user.email;
+    document.getElementById('auth-screen').classList.add('hidden');
+    document.getElementById('app-shell').classList.remove('hidden');
+    attachListeners();
+    router();
+  } else {
+    currentUser = null;
+    detachListeners();
+    document.getElementById('app-shell').classList.add('hidden');
+    document.getElementById('auth-screen').classList.remove('hidden');
+  }
+  });
+} else {
+  carnetBooted = true;
+}
+
+/* ---------- Formulaires d'auth ---------- */
+document.querySelectorAll('.auth-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('login-form').classList.toggle('hidden', tab.dataset.tab !== 'login');
+    document.getElementById('signup-form').classList.toggle('hidden', tab.dataset.tab !== 'signup');
+  });
+});
+
+document.getElementById('login-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const email = document.getElementById('login-email').value;
+  const password = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  const btn = document.getElementById('login-submit-btn');
+  errEl.textContent = '';
+  btn.disabled = true; btn.textContent = 'Connexion...';
+  const stuckTimer = setTimeout(() => {
+    errEl.textContent = "Ça ne répond pas. C'est probablement lié à la façon dont ce fichier est ouvert (depuis les téléchargements). Essaie de l'ouvrir via un lien http:// (hébergement, ou python3 -m http.server) plutôt qu'en tapant dessus depuis les téléchargements.";
+    btn.disabled = false; btn.textContent = 'Se connecter';
+  }, 8000);
+  try {
+    await auth.signInWithEmailAndPassword(email, password);
+    clearTimeout(stuckTimer);
+  } catch (err) {
+    clearTimeout(stuckTimer);
+    errEl.textContent = translateAuthError(err);
+    btn.disabled = false; btn.textContent = 'Se connecter';
+  }
+});
+
+document.getElementById('signup-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const name = document.getElementById('signup-name').value.trim();
+  const email = document.getElementById('signup-email').value;
+  const phone = document.getElementById('signup-phone').value.trim();
+  const password = document.getElementById('signup-password').value;
+  const errEl = document.getElementById('signup-error');
+  errEl.textContent = '';
+  try {
+    const cred = await auth.createUserWithEmailAndPassword(email, password);
+    const isOwnerAccount = email.trim().toLowerCase() === ADMIN_EMAIL;
+    const trialEnd = new Date(); trialEnd.setDate(trialEnd.getDate() + 7);
+    await db.collection('landlords').doc(cred.user.uid).set({
+      nom: name, email, telephone: phone, createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      plan: null, abonnementStatut: 'essai', abonnementExpire: trialEnd.toISOString().slice(0, 10), isAdmin: isOwnerAccount
+    });
+  } catch (err) { errEl.textContent = translateAuthError(err); }
+});
+
+document.getElementById('logout-btn').addEventListener('click', () => {
+  if (demoMode) exitDemoMode(); else auth.signOut();
+});
+document.getElementById('view-root').addEventListener('click', onViewClick);
+window.addEventListener('hashchange', router);
+
+updateDate();
+</script>
+</body>
+</html>
