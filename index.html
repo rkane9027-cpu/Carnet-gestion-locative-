@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0B0F14">
+<meta name="description" content="Carnet — l'application de gestion locative pensée pour les propriétaires en Côte d'Ivoire.">
+<title>Carnet — Gestion locative simplifiée</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script>
+window.__carnetMounted = false;
+function showRootFatal(msg){
+  var root = document.getElementById('root');
+  if (root && !root.innerHTML.trim()) {
+    root.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;font-family:sans-serif;background:#0B0F14;color:#fff;text-align:center;">' +
+      '<div><h1 style="font-size:18px;margin-bottom:12px;">Erreur de chargement</h1>' +
+      '<p style="font-size:13.5px;color:#9aa5b1;max-width:340px;line-height:1.5;margin:0 auto;">' + msg + '</p></div></div>';
+  }
+}
+window.addEventListener('error', function(e){
+  if (!window.__carnetMounted) showRootFatal((e.message || 'Erreur inconnue') + ' — vérifie ta connexion internet, ou ouvre cette page via son lien hébergé plutôt que depuis les téléchargements.');
+});
+window.addEventListener('unhandledrejection', function(e){
+  if (!window.__carnetMounted) showRootFatal(String((e.reason && e.reason.message) || e.reason || 'Erreur inconnue'));
+});
+setTimeout(function(){
+  if (!window.__carnetMounted) showRootFatal("La page ne charge pas. React, Babel ou la vidéo n'ont pas pu se charger depuis internet — vérifie ta connexion, ou ouvre cette page via son lien hébergé (GitHub Pages) plutôt que depuis les téléchargements.");
+}, 6000);
+</script>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin></script>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js" crossorigin></script>
+<style>
+:root{
+  --bg:#F4F6F9; --surface:#FFFFFF; --surface-2:#EEF2F6; --text:#1B2531; --text-dim:#63707C; --border:#DEE4EA;
+  --primary:#0E4C86; --primary-dark:#0A3A68; --primary-soft:#E7F0F9; --accent:#A9812F;
+  --success:#1E8E5F; --success-soft:#E5F5ED; --warn:#B07A1E; --warn-soft:#FAF1E1;
+  --shadow:0 1px 2px rgba(20,27,36,.05), 0 6px 16px rgba(20,27,36,.05);
+}
+[data-theme="dark"]{
+  --bg:#0F141A; --surface:#171E26; --surface-2:#1F2830; --text:#E7ECF1; --text-dim:#8A97A3; --border:#2A3541;
+  --primary:#4A9EE8; --primary-dark:#2E7BC4; --primary-soft:rgba(74,158,232,.16); --accent:#D2AE4D;
+  --success:#34C989; --success-soft:rgba(52,201,137,.16); --warn:#E3A83B; --warn-soft:rgba(227,168,59,.16);
+  --shadow:0 1px 2px rgba(0,0,0,.3), 0 6px 20px rgba(0,0,0,.35);
+}
+*, *::before, *::after{ box-sizing:border-box; }
+body{ margin:0; background:var(--bg); color:var(--text); font-family:'IBM Plex Sans',sans-serif; -webkit-font-smoothing:antialiased; }
+h1,h2,h3{ font-weight:600; letter-spacing:-.01em; margin:0; }
+a{ text-decoration:none; color:inherit; }
+.wrap{ max-width:1040px; margin:0 auto; padding:0 20px; }
+.dim{ color:var(--text-dim); }
+button{ font-family:inherit; }
+
+.btn-primary{ display:inline-flex; align-items:center; justify-content:center; background:var(--primary); color:#FFF; border:none; padding:13px 22px; border-radius:9px; font-weight:600; font-size:15px; cursor:pointer; transition:background .15s; }
+.btn-primary:hover{ background:var(--primary-dark); }
+.btn-ghost{ display:inline-flex; align-items:center; justify-content:center; background:var(--surface); color:var(--text); border:1px solid var(--border); padding:12px 22px; border-radius:9px; font-weight:600; font-size:15px; cursor:pointer; }
+.btn-glass{ display:inline-flex; align-items:center; justify-content:center; background:rgba(255,255,255,.12); color:#FFF; border:1px solid rgba(255,255,255,.28); padding:12px 22px; border-radius:9px; font-weight:600; font-size:15px; cursor:pointer; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); transition:background .15s; }
+.btn-glass:hover{ background:rgba(255,255,255,.2); }
+
+/* ---------- Header glassmorphique ---------- */
+.site-header{ position:fixed; top:0; left:0; right:0; z-index:60; padding:16px 0; }
+.site-header .wrap{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+.glass-bar{ background:rgba(15,20,26,.38); border:1px solid rgba(255,255,255,.14); backdrop-filter:blur(16px) saturate(160%); -webkit-backdrop-filter:blur(16px) saturate(160%); border-radius:14px; padding:10px 18px; display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%; }
+.brand{ display:flex; align-items:center; gap:10px; font-weight:700; font-size:18px; color:#FFF; }
+.brand-mark{ width:30px; height:30px; border-radius:8px; background:var(--primary); color:#FFF; display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0; }
+.nav-actions{ display:flex; align-items:center; gap:10px; }
+.theme-toggle{ display:inline-flex; gap:3px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2); border-radius:8px; padding:3px; }
+.theme-opt{ background:none; border:none; color:rgba(255,255,255,.75); padding:6px 11px; border-radius:6px; cursor:pointer; font-weight:600; font-size:12px; }
+.theme-opt.active{ background:rgba(255,255,255,.9); color:#0B0F14; }
+
+/* ---------- Hero vidéo ---------- */
+.hero{ position:relative; height:100svh; min-height:520px; overflow:hidden; background:#0B0F14; }
+.hero video{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.hero-overlay{ position:absolute; inset:0; background:linear-gradient(180deg, rgba(8,11,15,.25) 0%, rgba(8,11,15,.35) 45%, rgba(8,11,15,.88) 100%); }
+.hero-content{ position:absolute; left:0; bottom:0; padding:0 20px 64px; max-width:600px; z-index:2; color:#FFF; }
+.hero-content h1{ font-size:clamp(28px,5vw,44px); line-height:1.14; margin-bottom:16px; }
+.hero-content p{ font-size:16px; color:rgba(255,255,255,.82); line-height:1.6; margin-bottom:26px; max-width:460px; }
+.hero-actions{ display:flex; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+.hero-note{ font-size:12.5px; color:rgba(255,255,255,.6); }
+.scroll-cue{ position:absolute; right:24px; bottom:26px; z-index:2; display:flex; flex-direction:column; align-items:center; gap:6px; color:rgba(255,255,255,.55); font-size:11px; letter-spacing:.08em; text-transform:uppercase; }
+.scroll-cue span{ width:1px; height:34px; background:linear-gradient(180deg, rgba(255,255,255,.7), transparent); animation:scrollLine 1.8s ease-in-out infinite; }
+@keyframes scrollLine{ 0%{ transform:scaleY(0); transform-origin:top; } 50%{ transform:scaleY(1); transform-origin:top; } 51%{ transform-origin:bottom; } 100%{ transform:scaleY(0); transform-origin:bottom; } }
+
+section{ padding:52px 0; }
+.section-head{ text-align:center; max-width:520px; margin:0 auto 36px; }
+.section-head h2{ font-size:27px; margin-bottom:10px; }
+.section-head p{ color:var(--text-dim); font-size:15px; }
+
+/* ---------- Bento ---------- */
+.bento-grid{ display:grid; grid-template-columns:repeat(4,1fr); grid-auto-rows:minmax(120px,auto); gap:16px; grid-auto-flow:dense; }
+.bento-tile{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:22px; box-shadow:var(--shadow); transition:transform .2s ease, box-shadow .2s ease; display:flex; flex-direction:column; }
+.bento-tile:hover{ transform:translateY(-4px); box-shadow:0 14px 30px rgba(20,27,36,.12); }
+.bento-tile.lg{ grid-column:span 2; grid-row:span 2; justify-content:space-between; }
+.bento-tile.wide{ grid-column:span 2; }
+.feature-icon{ width:38px; height:38px; border-radius:9px; background:var(--primary-soft); color:var(--primary); display:flex; align-items:center; justify-content:center; margin-bottom:14px; flex-shrink:0; }
+.bento-tile.lg .feature-icon{ width:46px; height:46px; border-radius:11px; }
+.feature-icon svg{ width:19px; height:19px; }
+.bento-tile.lg .feature-icon svg{ width:23px; height:23px; }
+.bento-tile h3{ font-size:15.5px; margin-bottom:6px; }
+.bento-tile.lg h3{ font-size:19px; }
+.bento-tile p{ font-size:13.5px; color:var(--text-dim); line-height:1.55; margin:0; }
+.method-chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:16px; }
+.method-chips span{ background:var(--surface-2); border:1px solid var(--border); border-radius:999px; padding:4px 11px; font-size:11.5px; color:var(--text-dim); font-weight:600; }
+.mini-chat{ margin-top:16px; display:flex; flex-direction:column; gap:7px; }
+.mini-chat .bubble{ font-size:12px; padding:8px 12px; border-radius:9px; max-width:80%; }
+.mini-chat .bubble.q{ background:var(--surface-2); align-self:flex-start; }
+.mini-chat .bubble.a{ background:var(--primary); color:#FFF; align-self:flex-end; }
+@media (max-width:700px){ .bento-grid{ grid-template-columns:repeat(2,1fr); } .bento-tile.lg{ grid-column:span 2; grid-row:span 1; } }
+@media (max-width:460px){ .bento-grid{ grid-template-columns:1fr; } .bento-tile.lg, .bento-tile.wide{ grid-column:span 1; } }
+
+/* ---------- Étapes ---------- */
+.steps-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:18px; max-width:820px; margin:0 auto; }
+.step-card{ text-align:center; padding:8px; }
+.step-num{ width:32px; height:32px; border-radius:50%; background:var(--primary); color:#FFF; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; margin:0 auto 14px; }
+.step-card h3{ font-size:15.5px; margin-bottom:7px; }
+.step-card p{ font-size:13.5px; color:var(--text-dim); line-height:1.55; margin:0; }
+
+/* ---------- Carousel ---------- */
+.carousel-wrap{ max-width:600px; margin:0 auto; }
+.carousel-viewport{ position:relative; border-radius:14px; overflow:hidden; }
+.mockup{ background:var(--surface); border:1px solid var(--border); border-radius:14px; box-shadow:0 20px 50px rgba(20,27,36,.12); overflow:hidden; text-align:left; }
+.mockup-bar{ display:flex; gap:6px; padding:11px 14px; border-bottom:1px solid var(--border); background:var(--surface-2); }
+.mockup-bar span{ width:9px; height:9px; border-radius:50%; background:var(--border); }
+.mockup-body{ padding:22px; min-height:170px; }
+.mockup-stats{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px; }
+.mockup-stat{ background:var(--surface-2); border:1px solid var(--border); border-radius:8px; padding:10px 12px; }
+.mockup-stat-label{ font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.04em; margin-bottom:5px; }
+.mockup-stat-val{ font-family:'IBM Plex Mono',monospace; font-size:15px; font-weight:600; color:var(--text); }
+.mockup-stat-val small{ font-size:10px; font-weight:400; color:var(--text-dim); }
+.mockup-stat-val.warn{ color:var(--warn); }
+.mockup-chart{ display:flex; align-items:flex-end; gap:8px; height:70px; }
+.mockup-bar-col{ flex:1; background:linear-gradient(180deg,var(--primary),var(--primary-dark)); border-radius:3px 3px 0 0; }
+.mini-list{ display:flex; flex-direction:column; gap:9px; }
+.mini-list-row{ display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:var(--surface-2); border-radius:8px; font-size:13px; }
+.mini-list-row .m-name{ font-weight:600; }
+.mini-list-row .m-badge{ font-size:10.5px; color:var(--text-dim); background:var(--surface); border:1px solid var(--border); padding:2px 8px; border-radius:999px; }
+.mini-list-row .m-amount{ font-family:'IBM Plex Mono',monospace; font-weight:600; }
+.slide-caption{ text-align:center; font-size:13.5px; color:var(--text-dim); margin-top:14px; }
+.carousel-dots{ display:flex; justify-content:center; gap:8px; margin-top:18px; }
+.dot{ width:8px; height:8px; border-radius:50%; background:var(--border); border:none; cursor:pointer; padding:0; transition:background .2s, transform .2s; }
+.dot.active{ background:var(--primary); transform:scale(1.3); }
+
+/* ---------- Tarifs ---------- */
+.plan-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:18px; max-width:640px; margin:0 auto; }
+.plan-card{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:26px; text-align:center; box-shadow:var(--shadow); }
+.plan-card.pro{ border-color:var(--primary); box-shadow:0 0 0 1px var(--primary) inset; position:relative; }
+.plan-badge{ position:absolute; top:-11px; left:50%; transform:translateX(-50%); background:var(--primary); color:#FFF; font-size:11px; font-weight:700; padding:3px 12px; border-radius:999px; letter-spacing:.03em; }
+.plan-price{ font-family:'IBM Plex Mono',monospace; font-size:28px; font-weight:600; color:var(--primary); margin:10px 0 2px; }
+.plan-price span{ font-family:'IBM Plex Sans'; font-size:12.5px; color:var(--text-dim); font-weight:400; }
+.plan-sub{ font-size:13px; color:var(--text-dim); margin-bottom:16px; }
+.plan-features{ list-style:none; padding:0; margin:0 0 22px; text-align:left; font-size:13.5px; color:var(--text-dim); }
+.plan-features li{ padding:7px 0; border-bottom:1px solid var(--border); }
+.plan-features li:last-child{ border-bottom:none; }
+.plan-card a{ width:100%; }
+
+/* ---------- FAQ ---------- */
+.faq-list{ max-width:640px; margin:0 auto; display:flex; flex-direction:column; gap:10px; }
+.faq-item{ background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:15px 18px; cursor:pointer; }
+.faq-q{ display:flex; align-items:center; justify-content:space-between; gap:10px; font-weight:600; font-size:14.5px; }
+.faq-q .plus{ color:var(--text-dim); font-weight:400; flex-shrink:0; }
+.faq-item p{ margin:12px 0 0; font-size:13.5px; color:var(--text-dim); line-height:1.55; }
+
+.cta-band{ background:var(--primary); color:#FFF; border-radius:16px; padding:44px 30px; text-align:center; margin:0 20px; }
+.cta-band h2{ font-size:24px; margin-bottom:10px; }
+.cta-band p{ color:rgba(255,255,255,.82); margin-bottom:22px; font-size:14.5px; }
+.cta-band .btn-primary{ background:#FFF; color:var(--primary); }
+.cta-band .btn-primary:hover{ background:#EDF2F8; }
+
+footer{ padding:30px 0 40px; text-align:center; color:var(--text-dim); font-size:12.5px; border-top:1px solid var(--border); margin-top:30px; }
+.footer-inner{ display:flex; align-items:center; justify-content:center; gap:16px; flex-wrap:wrap; }
+.footer-contact{ color:var(--primary); font-weight:600; }
+
+.reveal{ opacity:0; transform:translateY(20px); transition:opacity .6s ease, transform .6s ease; }
+.reveal.in-view{ opacity:1; transform:none; }
+@media (prefers-reduced-motion:reduce){ .reveal{ opacity:1; transform:none; transition:none; } .scroll-cue span{ animation:none; } }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef, useCallback } = React;
+
+/* ======================================================
+   Remplace cette URL par ta propre vidéo HLS (.m3u8) une fois prête.
+   En attendant, flux de démonstration public d'Apple (test HLS officiel).
+   ====================================================== */
+const HERO_VIDEO_SRC = "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_16x9/bipbop_16x9_variant.m3u8";
+
+function useTheme(){
+  const [theme, setTheme] = useState('dark');
+  useEffect(() => {
+    let saved = null;
+    try { saved = localStorage.getItem('carnet-theme'); } catch (e) {}
+    const initial = saved === 'light' ? 'light' : 'dark';
+    setTheme(initial);
+  }, []);
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', theme === 'dark' ? '#0B0F14' : '#F4F6F9');
+    try { localStorage.setItem('carnet-theme', theme); } catch (e) {}
+  }, [theme]);
+  return [theme, setTheme];
+}
+
+function useReveal(){
+  const ref = useRef(null);
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    if (!ref.current || !('IntersectionObserver' in window)) { setInView(true); return; }
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(entry => { if (entry.isIntersecting) { setInView(true); obs.unobserve(entry.target); } });
+    }, { threshold: 0.15 });
+    obs.observe(ref.current);
+    return () => obs.disconnect();
+  }, []);
+  return [ref, inView];
+}
+
+function ThemeToggle({ theme, setTheme }){
+  return (
+    <div className="theme-toggle">
+      <button type="button" className={"theme-opt" + (theme === 'light' ? ' active' : '')} onClick={() => setTheme('light')}>Clair</button>
+      <button type="button" className={"theme-opt" + (theme === 'dark' ? ' active' : '')} onClick={() => setTheme('dark')}>Sombre</button>
+    </div>
+  );
+}
+
+function Header({ theme, setTheme }){
+  return (
+    <header className="site-header">
+      <div className="wrap">
+        <div className="glass-bar">
+          <div className="brand"><span className="brand-mark">C</span>Carnet</div>
+          <div className="nav-actions">
+            <ThemeToggle theme={theme} setTheme={setTheme} />
+            <a href="carnet-gestion-locative.html" className="btn-glass">Se connecter</a>
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function Hero(){
+  const videoRef = useRef(null);
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    let hls;
+    if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      video.src = HERO_VIDEO_SRC;
+    } else if (window.Hls && window.Hls.isSupported()) {
+      hls = new window.Hls();
+      hls.loadSource(HERO_VIDEO_SRC);
+      hls.attachMedia(video);
+    }
+    return () => { if (hls) hls.destroy(); };
+  }, []);
+
+  return (
+    <div className="hero">
+      <video ref={videoRef} autoPlay muted loop playsInline />
+      <div className="hero-overlay"></div>
+      <div className="hero-content">
+        <h1>Tous tes loyers, sous contrôle.</h1>
+        <p>Biens, locataires, paiements et quittances — centralisés au même endroit, accessibles depuis ton téléphone. Fini les carnets papier et les loyers oubliés.</p>
+        <div className="hero-actions">
+          <a href="carnet-gestion-locative.html" className="btn-primary">Essayer gratuitement — 7 jours</a>
+          <a href="#tarifs" className="btn-glass">Voir les tarifs</a>
+        </div>
+        <p className="hero-note">Aucune carte bancaire requise pour commencer.</p>
+      </div>
+      <div className="scroll-cue"><span></span>Défiler</div>
+    </div>
+  );
+}
+
+const FEATURES = [
+  { size: 'lg', title: 'Paiements, toutes méthodes', text: "Enregistre chaque loyer reçu, quelle que soit la méthode utilisée par ton locataire.",
+    iconType: 'paiements', chips: ['Orange Money','MTN','Moov','Wave','Espèces'] },
+  { size: 'sm', title: "Tes biens, en un coup d'œil", text: 'Loyer, quartier, statut — occupé ou vacant.',
+    iconType: 'biens' },
+  { size: 'sm', title: 'Chaque locataire suivi', text: 'Coordonnées et historique de paiement au même endroit.',
+    iconType: 'locataires' },
+  { size: 'wide', title: 'Un assistant qui connaît tes données', text: 'Pose une question en langage courant, obtiens une réponse immédiate.',
+    iconType: 'assistant', chat: true },
+  { size: 'sm', title: 'Quittances en un clic', text: 'Un reçu PDF prêt à envoyer, à chaque paiement.',
+    iconType: 'quittance' },
+  { size: 'sm', title: 'Maintenance suivie', text: "Priorité et statut jusqu'à la résolution.",
+    iconType: 'maintenance' },
+  { size: 'sm', title: 'Rapports clairs', text: 'Revenus, retards, occupation — exportables en CSV.',
+    iconType: 'rapports' },
+];
+
+function FeatureIcon({ type }){
+  const props = { viewBox: "0 0 20 20", fill: "none", stroke: "currentColor", strokeWidth: "1.6" };
+  if (type === 'biens') return <svg {...props}><rect x="4" y="3" width="12" height="14" rx="1"/><line x1="4" y1="8" x2="16" y2="8"/><line x1="4" y1="13" x2="16" y2="13"/><line x1="9" y1="3" x2="9" y2="17"/></svg>;
+  if (type === 'locataires') return <svg {...props}><circle cx="10" cy="7" r="3"/><path d="M4 17a6 6 0 0 1 12 0"/></svg>;
+  if (type === 'quittance') return <svg {...props}><rect x="4" y="2" width="12" height="16" rx="1"/><line x1="7" y1="6" x2="13" y2="6"/><line x1="7" y1="10" x2="13" y2="10"/><path d="M7 14l2 2 4-4"/></svg>;
+  if (type === 'maintenance') return <svg {...props}><circle cx="10" cy="10" r="2.6"/><line x1="10" y1="2" x2="10" y2="5"/><line x1="10" y1="15" x2="10" y2="18"/><line x1="2" y1="10" x2="5" y2="10"/><line x1="15" y1="10" x2="18" y2="10"/><line x1="4.5" y1="4.5" x2="6.5" y2="6.5"/><line x1="13.5" y1="13.5" x2="15.5" y2="15.5"/><line x1="4.5" y1="15.5" x2="6.5" y2="13.5"/><line x1="13.5" y1="6.5" x2="15.5" y2="4.5"/></svg>;
+  if (type === 'rapports') return <svg {...props}><rect x="3" y="10" width="3" height="7" rx="0.5"/><rect x="8.5" y="5" width="3" height="12" rx="0.5"/><rect x="14" y="12" width="3" height="5" rx="0.5"/></svg>;
+  if (type === 'assistant') return <svg {...props}><rect x="2" y="4" width="16" height="10" rx="3"/><polygon points="6,14 6,18 10,14" fill="currentColor" stroke="none"/></svg>;
+  return <svg {...props}><rect x="2" y="5" width="16" height="11" rx="2"/><path d="M2 9h16"/><circle cx="14" cy="13" r="1.2"/></svg>;
+}
+
+function BentoTile({ f, delay }){
+  const [ref, inView] = useReveal();
+  const cls = "bento-tile reveal" + (f.size === 'lg' ? ' lg' : f.size === 'wide' ? ' wide' : '') + (inView ? ' in-view' : '');
+  return (
+    <div ref={ref} className={cls} style={{ transitionDelay: delay + 's' }}>
+      <div>
+        <div className="feature-icon"><FeatureIcon type={f.iconType} /></div>
+        <h3>{f.title}</h3>
+        <p>{f.text}</p>
+      </div>
+      {f.chips ? (
+        <div className="method-chips">
+          {f.chips.map(c => <span key={c}>{c}</span>)}
+        </div>
+      ) : null}
+      {f.chat ? (
+        <div className="mini-chat">
+          <div className="bubble q">Qui est en retard ce mois ?</div>
+          <div className="bubble a">Fatou Diabaté — 70 000 FCFA</div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function Features(){
+  return (
+    <section>
+      <div className="wrap">
+        <div className="section-head">
+          <h2>Tout ce qu'il faut, rien de superflu</h2>
+          <p>Une seule application pour suivre tes biens du premier jour de location jusqu'au dernier reçu.</p>
+        </div>
+        <div className="bento-grid">
+          {FEATURES.map((f, i) => <BentoTile key={f.title} f={f} delay={i * 0.06} />)}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Steps(){
+  const steps = [
+    { n: 1, title: 'Crée ton compte', text: "Inscription en moins d'une minute. 7 jours d'essai gratuit démarrent aussitôt, sans carte bancaire." },
+    { n: 2, title: 'Ajoute tes biens', text: 'Renseigne tes propriétés, leurs loyers, et qui les occupe.' },
+    { n: 3, title: 'Suis tout au même endroit', text: 'Paiements, retards, quittances et rapports — sans classeur ni carnet papier.' },
+  ];
+  return (
+    <section>
+      <div className="wrap">
+        <div className="section-head">
+          <h2>Comment ça marche</h2>
+          <p>Trois étapes, et tes locations sont sous contrôle.</p>
+        </div>
+        <div className="steps-grid">
+          {steps.map(s => (
+            <div className="step-card" key={s.n}>
+              <div className="step-num">{s.n}</div>
+              <h3>{s.title}</h3>
+              <p>{s.text}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function DashboardSlide(){
+  const bars = [35,52,44,78,92,70];
+  return (
+    <div className="mockup">
+      <div className="mockup-bar"><span></span><span></span><span></span></div>
+      <div className="mockup-body">
+        <div className="mockup-stats">
+          <div className="mockup-stat"><div className="mockup-stat-label">Revenu du mois</div><div className="mockup-stat-val">225 000 <small>FCFA</small></div></div>
+          <div className="mockup-stat"><div className="mockup-stat-label">En retard</div><div className="mockup-stat-val warn">1</div></div>
+          <div className="mockup-stat"><div className="mockup-stat-label">Occupation</div><div className="mockup-stat-val">75%</div></div>
+        </div>
+        <div className="mockup-chart">
+          {bars.map((h, i) => <div key={i} className="mockup-bar-col" style={{ height: h + '%' }}></div>)}
+        </div>
+      </div>
+    </div>
+  );
+}
+function PaymentsSlide(){
+  const rows = [
+    ['Fatou Diabaté','Orange Money','70 000'],
+    ['Kader Traoré','Wave','85 000'],
+    ['Aya Kouassi','MTN','60 000'],
+    ['Ibrahim Coulibaly','Espèces','70 000'],
+  ];
+  return (
+    <div className="mockup">
+      <div className="mockup-bar"><span></span><span></span><span></span></div>
+      <div className="mockup-body">
+        <div className="mini-list">
+          {rows.map(r => (
+            <div className="mini-list-row" key={r[0]}>
+              <span className="m-name">{r[0]}</span><span className="m-badge">{r[1]}</span><span className="m-amount">{r[2]}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+function AssistantSlide(){
+  return (
+    <div className="mockup">
+      <div className="mockup-bar"><span></span><span></span><span></span></div>
+      <div className="mockup-body">
+        <div className="mini-chat" style={{ marginTop: 0 }}>
+          <div className="bubble q">Quel est mon revenu ce mois-ci ?</div>
+          <div className="bubble a">225 000 FCFA reçus sur 295 000 FCFA attendus. Il manque le loyer de Fatou Diabaté (70 000 FCFA), en retard de 25 jours.</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Showcase(){
+  const slides = [
+    { node: <DashboardSlide />, caption: "Tableau de bord — revenus et retards en un coup d'œil" },
+    { node: <PaymentsSlide />, caption: 'Paiements — chaque loyer, chaque méthode, enregistré' },
+    { node: <AssistantSlide />, caption: 'Assistant IA — réponses immédiates sur tes données' },
+  ];
+  const [active, setActive] = useState(0);
+  const timerRef = useRef(null);
+  const [ref, inView] = useReveal();
+
+  const start = useCallback(() => {
+    clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => setActive(a => (a + 1) % slides.length), 4500);
+  }, [slides.length]);
+
+  useEffect(() => { start(); return () => clearInterval(timerRef.current); }, [start]);
+
+  const goTo = (i) => { setActive(i); start(); };
+
+  return (
+    <section>
+      <div className="wrap">
+        <div className="section-head">
+          <h2>Découvre l'app en images</h2>
+          <p>Un aperçu de ce que tu retrouves une fois connecté.</p>
+        </div>
+        <div ref={ref} className={"carousel-wrap reveal" + (inView ? ' in-view' : '')}>
+          <div className="carousel-viewport">
+            {slides[active].node}
+          </div>
+          <p className="slide-caption">{slides[active].caption}</p>
+          <div className="carousel-dots">
+            {slides.map((s, i) => (
+              <button key={i} className={"dot" + (i === active ? ' active' : '')} onClick={() => goTo(i)} aria-label={"Diapositive " + (i + 1)}></button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Pricing(){
+  const [ref1, inView1] = useReveal();
+  const [ref2, inView2] = useReveal();
+  return (
+    <section id="tarifs">
+      <div className="wrap">
+        <div className="section-head">
+          <h2>Des tarifs simples</h2>
+          <p>7 jours d'essai gratuit sur les deux formules, sans engagement.</p>
+        </div>
+        <div className="plan-grid">
+          <div ref={ref1} className={"plan-card reveal" + (inView1 ? ' in-view' : '')}>
+            <h3>Essentiel</h3>
+            <div className="plan-price">2 000 <span>FCFA / mois</span></div>
+            <div className="plan-sub">Jusqu'à 10 biens</div>
+            <ul className="plan-features">
+              <li>Suivi loyers &amp; paiements</li>
+              <li>Locataires illimités</li>
+              <li>Maintenance</li>
+              <li>Export CSV</li>
+            </ul>
+            <a href="carnet-gestion-locative.html" className="btn-ghost">Commencer</a>
+          </div>
+          <div ref={ref2} className={"plan-card pro reveal" + (inView2 ? ' in-view' : '')} style={{ transitionDelay: '.1s' }}>
+            <span className="plan-badge">Populaire</span>
+            <h3>Pro</h3>
+            <div className="plan-price">7 000 <span>FCFA / mois</span></div>
+            <div className="plan-sub">Biens illimités</div>
+            <ul className="plan-features">
+              <li>Tout Essentiel</li>
+              <li>Biens illimités</li>
+              <li>Rapports avancés</li>
+              <li>Support prioritaire</li>
+            </ul>
+            <a href="carnet-gestion-locative.html" className="btn-primary">Commencer</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function FAQItem({ q, a, delay }){
+  const [open, setOpen] = useState(false);
+  const [ref, inView] = useReveal();
+  return (
+    <div ref={ref} className={"faq-item reveal" + (inView ? ' in-view' : '')} style={{ transitionDelay: delay + 's' }} onClick={() => setOpen(o => !o)}>
+      <div className="faq-q">{q}<span className="plus">{open ? '\u2212' : '+'}</span></div>
+      {open ? <p>{a}</p> : null}
+    </div>
+  );
+}
+
+function FAQ(){
+  const items = [
+    { q: "Dois-je entrer ma carte bancaire pour l'essai gratuit ?", a: "Non. Tu peux créer ton compte et utiliser Carnet librement pendant 7 jours, sans carte ni engagement." },
+    { q: 'Quels moyens de paiement mes locataires peuvent-ils utiliser ?', a: 'Tu peux enregistrer des paiements reçus par Orange Money, MTN Mobile Money, Moov Money, Wave, espèces ou virement bancaire.' },
+    { q: 'Est-ce que ça marche sur téléphone ?', a: 'Oui. Carnet fonctionne aussi bien sur ordinateur que sur mobile, directement depuis le navigateur, sans rien installer.' },
+    { q: 'Mes données sont-elles en sécurité ?', a: "Oui, tes données sont stockées de façon sécurisée et ne sont accessibles qu'à toi, avec ton compte." },
+    { q: 'Puis-je annuler à tout moment ?', a: 'Oui, aucun engagement de durée — tu arrêtes quand tu veux.' },
+  ];
+  return (
+    <section>
+      <div className="wrap">
+        <div className="section-head"><h2>Questions fréquentes</h2></div>
+        <div className="faq-list">
+          {items.map((it, i) => <FAQItem key={it.q} q={it.q} a={it.a} delay={i * 0.05} />)}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function CTABand(){
+  return (
+    <section>
+      <div className="cta-band">
+        <h2>Prêt à mettre de l'ordre dans tes locations ?</h2>
+        <p>7 jours gratuits, aucune carte bancaire requise.</p>
+        <a href="carnet-gestion-locative.html" className="btn-primary">Créer mon compte</a>
+      </div>
+    </section>
+  );
+}
+
+function Footer(){
+  return (
+    <footer>
+      <div className="wrap footer-inner">
+        <span>Carnet — KaneGame Studio · Abidjan, Côte d'Ivoire</span>
+        <a href="https://wa.me/225501229674" className="footer-contact">Contact WhatsApp</a>
+      </div>
+    </footer>
+  );
+}
+
+function App(){
+  const [theme, setTheme] = useTheme();
+  return (
+    <React.Fragment>
+      <Header theme={theme} setTheme={setTheme} />
+      <Hero />
+      <Features />
+      <Steps />
+      <Showcase />
+      <Pricing />
+      <FAQ />
+      <CTABand />
+      <Footer />
+    </React.Fragment>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+window.__carnetMounted = true;
+</script>
+</body>
+</html>
