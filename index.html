@@ -4,8 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#0B0F14">
-<meta name="description" content="Carnet — l'application de gestion locative pensée pour les propriétaires en Côte d'Ivoire.">
-<title>Carnet — Gestion locative simplifiée</title>
+<meta name="description" content="Loyer Pro — l'application de gestion locative pensée pour les propriétaires en Côte d'Ivoire. Biens, locataires, paiements et quittances, centralisés.">
+<meta property="og:title" content="Loyer Pro — Gestion locative simplifiée">
+<meta property="og:description" content="Biens, locataires, paiements et quittances — centralisés au même endroit. 7 jours d'essai gratuit.">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="fr_FR">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230E4C86'/%3E%3Ctext x='32' y='45' font-family='Arial,sans-serif' font-weight='700' font-size='36' fill='white' text-anchor='middle'%3EL%3C/text%3E%3C/svg%3E">
+<title>Loyer Pro — Gestion locative simplifiée</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script>
@@ -31,7 +36,6 @@ setTimeout(function(){
 <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin></script>
-<script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js" crossorigin></script>
 <style>
 :root{
   --bg:#F4F6F9; --surface:#FFFFFF; --surface-2:#EEF2F6; --text:#1B2531; --text-dim:#63707C; --border:#DEE4EA;
@@ -71,7 +75,13 @@ button{ font-family:inherit; }
 .theme-opt.active{ background:rgba(255,255,255,.9); color:#0B0F14; }
 
 /* ---------- Hero vidéo ---------- */
-.hero{ position:relative; height:100svh; min-height:520px; overflow:hidden; background:#0B0F14; }
+.hero{
+  position:relative; height:100svh; min-height:520px; overflow:hidden;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(74,158,232,.20) 0%, transparent 45%),
+    radial-gradient(circle at 85% 75%, rgba(74,158,232,.14) 0%, transparent 50%),
+    linear-gradient(165deg, #0B0F14 0%, #101B28 45%, #0B0F14 100%);
+}
 .hero video{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
 .hero-overlay{ position:absolute; inset:0; background:linear-gradient(180deg, rgba(8,11,15,.25) 0%, rgba(8,11,15,.35) 45%, rgba(8,11,15,.88) 100%); }
 .hero-content{ position:absolute; left:0; bottom:0; padding:0 20px 64px; max-width:600px; z-index:2; color:#FFF; }
@@ -180,14 +190,14 @@ footer{ padding:30px 0 40px; text-align:center; color:var(--text-dim); font-size
 <body>
 <div id="root"></div>
 
-<script type="text/babel" data-presets="react">
+<script type="text/plain" id="carnet-app-source">
 const { useState, useEffect, useRef, useCallback } = React;
 
 /* ======================================================
-   Remplace cette URL par ta propre vidéo HLS (.m3u8) une fois prête.
-   En attendant, flux de démonstration public d'Apple (test HLS officiel).
+   Vidéo du hero — générée par Ralph via Google Flow.
+   Remplace HERO_VIDEO_SRC si tu regénères une nouvelle vidéo.
    ====================================================== */
-const HERO_VIDEO_SRC = "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_16x9/bipbop_16x9_variant.m3u8";
+const HERO_VIDEO_SRC = "https://labs.google/fx/api/og-video/shared/b71991c5-13b2-4056-80f4-e1237802214a";
 
 function useTheme(){
   const [theme, setTheme] = useState('dark');
@@ -234,7 +244,7 @@ function Header({ theme, setTheme }){
     <header className="site-header">
       <div className="wrap">
         <div className="glass-bar">
-          <div className="brand"><span className="brand-mark">C</span>Carnet</div>
+          <div className="brand"><span className="brand-mark">L</span>Loyer Pro</div>
           <div className="nav-actions">
             <ThemeToggle theme={theme} setTheme={setTheme} />
             <a href="carnet-gestion-locative.html" className="btn-glass">Se connecter</a>
@@ -247,23 +257,12 @@ function Header({ theme, setTheme }){
 
 function Hero(){
   const videoRef = useRef(null);
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    let hls;
-    if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = HERO_VIDEO_SRC;
-    } else if (window.Hls && window.Hls.isSupported()) {
-      hls = new window.Hls();
-      hls.loadSource(HERO_VIDEO_SRC);
-      hls.attachMedia(video);
-    }
-    return () => { if (hls) hls.destroy(); };
-  }, []);
+  const [videoFailed, setVideoFailed] = useState(false);
 
   return (
     <div className="hero">
-      <video ref={videoRef} autoPlay muted loop playsInline />
+      <video ref={videoRef} src={HERO_VIDEO_SRC} autoPlay muted loop playsInline preload="auto"
+             onError={() => setVideoFailed(true)} style={{ opacity: videoFailed ? 0 : 1 }} />
       <div className="hero-overlay"></div>
       <div className="hero-content">
         <h1>Tous tes loyers, sous contrôle.</h1>
@@ -526,9 +525,9 @@ function FAQItem({ q, a, delay }){
 
 function FAQ(){
   const items = [
-    { q: "Dois-je entrer ma carte bancaire pour l'essai gratuit ?", a: "Non. Tu peux créer ton compte et utiliser Carnet librement pendant 7 jours, sans carte ni engagement." },
+    { q: "Dois-je entrer ma carte bancaire pour l'essai gratuit ?", a: "Non. Tu peux créer ton compte et utiliser Loyer Pro librement pendant 7 jours, sans carte ni engagement." },
     { q: 'Quels moyens de paiement mes locataires peuvent-ils utiliser ?', a: 'Tu peux enregistrer des paiements reçus par Orange Money, MTN Mobile Money, Moov Money, Wave, espèces ou virement bancaire.' },
-    { q: 'Est-ce que ça marche sur téléphone ?', a: 'Oui. Carnet fonctionne aussi bien sur ordinateur que sur mobile, directement depuis le navigateur, sans rien installer.' },
+    { q: 'Est-ce que ça marche sur téléphone ?', a: 'Oui. Loyer Pro fonctionne aussi bien sur ordinateur que sur mobile, directement depuis le navigateur, sans rien installer.' },
     { q: 'Mes données sont-elles en sécurité ?', a: "Oui, tes données sont stockées de façon sécurisée et ne sont accessibles qu'à toi, avec ton compte." },
     { q: 'Puis-je annuler à tout moment ?', a: 'Oui, aucun engagement de durée — tu arrêtes quand tu veux.' },
   ];
@@ -560,7 +559,7 @@ function Footer(){
   return (
     <footer>
       <div className="wrap footer-inner">
-        <span>Carnet — KaneGame Studio · Abidjan, Côte d'Ivoire</span>
+        <span>Loyer Pro — KaneGame Studio · Abidjan, Côte d'Ivoire</span>
         <a href="https://wa.me/225501229674" className="footer-contact">Contact WhatsApp</a>
       </div>
     </footer>
@@ -587,6 +586,19 @@ function App(){
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<App />);
 window.__carnetMounted = true;
+</script>
+<script>
+(function(){
+  try {
+    var source = document.getElementById('carnet-app-source').textContent;
+    var output = Babel.transform(source, { presets: [['react', { runtime: 'classic' }]] }).code;
+    var s = document.createElement('script');
+    s.text = output;
+    document.body.appendChild(s);
+  } catch (err) {
+    showRootFatal('Erreur de compilation : ' + err.message);
+  }
+})();
 </script>
 </body>
 </html>

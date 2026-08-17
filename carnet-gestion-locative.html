@@ -4,7 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#F4F6F9">
-<title>Carnet — Gestion locative</title>
+<meta name="description" content="Loyer Pro — gère tes biens, locataires, paiements et quittances en un seul endroit.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230E4C86'/%3E%3Ctext x='32' y='45' font-family='Arial,sans-serif' font-weight='700' font-size='36' fill='white' text-anchor='middle'%3EL%3C/text%3E%3C/svg%3E">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Loyer Pro">
+<title>Loyer Pro — Gestion locative</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -303,9 +310,9 @@ input:focus, select:focus, textarea:focus{ outline:2px solid var(--primary); out
     </div>
     <div class="brand">
       <span class="brand-mark">C</span>
-      <h1>Carnet</h1>
+      <h1>Loyer Pro</h1>
     </div>
-    <p class="brand-tagline">Le carnet de loyer de vos biens, tenu à jour.</p>
+    <p class="brand-tagline">Vos loyers, toujours à jour.</p>
 
     <div class="auth-tabs">
       <button type="button" class="auth-tab active" data-tab="login">Connexion</button>
@@ -333,7 +340,7 @@ input:focus, select:focus, textarea:focus{ outline:2px solid var(--primary); out
 <!-- APP SHELL -->
 <div id="app-shell" class="hidden">
   <aside class="sidebar">
-    <div class="sidebar-brand"><span class="brand-mark">C</span><span>Carnet</span></div>
+    <div class="sidebar-brand"><span class="brand-mark">L</span><span>Loyer Pro</span></div>
     <nav class="sidebar-nav">
       <a href="#/dashboard" data-route="dashboard"><svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="11" y="3" width="6" height="6" rx="1"/><rect x="3" y="11" width="6" height="6" rx="1"/><rect x="11" y="11" width="6" height="6" rx="1"/></svg>Tableau de bord</a>
       <a href="#/biens" data-route="biens"><svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="3" width="12" height="14" rx="1"/><line x1="4" y1="8" x2="16" y2="8"/><line x1="4" y1="13" x2="16" y2="13"/><line x1="9" y1="3" x2="9" y2="17"/></svg>Biens</a>
@@ -358,6 +365,7 @@ input:focus, select:focus, textarea:focus{ outline:2px solid var(--primary); out
           <button type="button" class="theme-opt active" data-theme-choice="light">Clair</button>
           <button type="button" class="theme-opt" data-theme-choice="dark">Sombre</button>
         </div>
+        <button type="button" class="btn-icon" id="support-btn" title="Aide / Support" style="font-size:18px;border:1px solid var(--border);border-radius:50%;width:32px;height:32px;">?</button>
         <div class="topbar-date" id="topbar-date"></div>
       </div>
     </header>
@@ -421,6 +429,12 @@ if (typeof firebase === 'undefined') {
   db = firebase.firestore();
 }
 const ADMIN_EMAIL = 'rkane9027@gmail.com';
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
 
 /* ---------- État global ---------- */
 let currentUser = null;
@@ -550,7 +564,7 @@ function loadDemoData(){
 }
 function enterDemoMode(){
   demoMode = true;
-  currentUser = { uid: 'demo-preview', email: 'demo@carnet.local' };
+  currentUser = { uid: 'demo-preview', email: 'demo@loyerpro.local' };
   const expire = new Date(); expire.setDate(expire.getDate() + 30);
   landlordData = { nom: 'Aperçu démo', isAdmin: true, plan: 'pro', abonnementStatut: 'actif', abonnementExpire: expire.toISOString().slice(0, 10) };
   demoRequests = [];
@@ -849,7 +863,7 @@ function generateReceipt(paymentId){
   let y = 18;
 
   doc.setFont('helvetica', 'bold'); doc.setFontSize(16);
-  doc.text('Carnet', 14, y);
+  doc.text('Loyer Pro', 14, y);
   doc.setFontSize(10); doc.setFont('helvetica', 'normal'); doc.setTextColor(120);
   doc.text('Gestion locative', 14, y + 5);
   doc.setTextColor(0);
@@ -982,7 +996,7 @@ function renderDashboard(){
   if (trialStatut === 'essai' && trialLeft !== null) {
     if (trialLeft <= 0) {
       trialBanner = `<div class="card" style="border-color:var(--danger);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-        <span><strong style="color:var(--danger);">Essai gratuit terminé.</strong> <span class="dim">Choisis un plan pour continuer à utiliser Carnet sans interruption.</span></span>
+        <span><strong style="color:var(--danger);">Essai gratuit terminé.</strong> <span class="dim">Choisis un plan pour continuer à utiliser Loyer Pro sans interruption.</span></span>
         <a href="#/abonnement" class="btn-primary" style="text-decoration:none;">Voir les plans</a>
       </div>`;
     } else if (trialLeft <= 3) {
@@ -1237,7 +1251,7 @@ async function askGeminiAssistant(question){
   const context = buildDataContext();
   const body = {
     system_instruction: {
-      parts: [{ text: `Tu es l'assistant intégré à Carnet, une app de gestion locative pour des propriétaires en Côte d'Ivoire. Réponds en français, de façon concise et directe, en te basant UNIQUEMENT sur les données ci-dessous. Si l'information n'y est pas, dis-le clairement plutôt que d'inventer.\n\nDonnées actuelles du propriétaire :\n${context}` }]
+      parts: [{ text: `Tu es l'assistant intégré à Loyer Pro, une app de gestion locative pour des propriétaires en Côte d'Ivoire. Réponds en français, de façon concise et directe, en te basant UNIQUEMENT sur les données ci-dessous. Si l'information n'y est pas, dis-le clairement plutôt que d'inventer.\n\nDonnées actuelles du propriétaire :\n${context}` }]
     },
     contents: [{ role: 'user', parts: [{ text: question }] }]
   };
@@ -1372,6 +1386,64 @@ function detachListeners(){
   assistantMessages = [];
 }
 
+/* ---------- Support client ---------- */
+function openSupportModal(){
+  openModal('Contacter le support', `
+    <label>Sujet
+      <select name="sujet" required>
+        <option value="Question générale">Question générale</option>
+        <option value="Problème technique">Problème technique</option>
+        <option value="Facturation / abonnement">Facturation / abonnement</option>
+        <option value="Suggestion">Suggestion</option>
+      </select>
+    </label>
+    <label>Message<textarea name="message" rows="4" required placeholder="Décris ta question ou ton souci..."></textarea></label>
+  `, submitSupportRequest, 'Envoyer');
+}
+async function submitSupportRequest(formData){
+  const sujet = formData.get('sujet');
+  const message = formData.get('message')?.trim();
+  if (!message) { toast('Écris un message avant d\'envoyer.', 'err'); return; }
+  if (demoMode) { toast('Message envoyé (mode démo, non enregistré réellement)'); closeModal(); return; }
+  try {
+    await db.collection('supportMessages').add({
+      landlordId: currentUser.uid,
+      landlordNom: landlordData?.nom || currentUser.email,
+      landlordEmail: currentUser.email,
+      sujet, message,
+      statut: 'nouveau',
+      dateCreation: new Date().toISOString().slice(0, 10)
+    });
+    toast('Message envoyé — on te répond au plus vite.');
+    closeModal();
+  } catch (err) {
+    toast('Erreur : ' + err.message, 'err');
+  }
+}
+
+/* ---------- Rappel d'essai à la connexion ---------- */
+function maybeShowTrialReminder(){
+  if (demoMode || landlordData?.isAdmin) return;
+  const statut = landlordData?.abonnementStatut || 'essai';
+  if (statut !== 'essai') return;
+  const left = trialDaysLeft();
+  if (left === null) return;
+  let shown = false;
+  try { shown = sessionStorage.getItem('trial-reminder-shown') === '1'; } catch (e) {}
+  if (shown) return;
+  try { sessionStorage.setItem('trial-reminder-shown', '1'); } catch (e) {}
+
+  if (left <= 0) {
+    openModal('Ton essai gratuit est terminé', `
+      <p class="dim">Les 7 jours d'essai gratuit sont écoulés. Choisis un plan pour continuer à profiter de toutes les fonctionnalités de Loyer Pro.</p>
+    `, () => { closeModal(); location.hash = '#/abonnement'; }, 'Voir les plans');
+  } else if (left <= 7) {
+    openModal('Ton essai gratuit', `
+      <p class="dim">Il te reste <strong>${left} jour${left > 1 ? 's' : ''}</strong> d'essai gratuit. Choisis un plan dès maintenant pour ne pas perdre l'accès à tes données et fonctionnalités.</p>
+    `, () => { closeModal(); location.hash = '#/abonnement'; }, 'Voir les plans');
+  }
+}
+
 if (auth) {
   auth.onAuthStateChanged(async user => {
   carnetBooted = true;
@@ -1399,6 +1471,7 @@ if (auth) {
     document.getElementById('app-shell').classList.remove('hidden');
     attachListeners();
     router();
+    maybeShowTrialReminder();
   } else {
     currentUser = null;
     detachListeners();
@@ -1464,6 +1537,7 @@ document.getElementById('signup-form').addEventListener('submit', async e => {
 document.getElementById('logout-btn').addEventListener('click', () => {
   if (demoMode) exitDemoMode(); else auth.signOut();
 });
+document.getElementById('support-btn').addEventListener('click', openSupportModal);
 document.getElementById('view-root').addEventListener('click', onViewClick);
 window.addEventListener('hashchange', router);
 
