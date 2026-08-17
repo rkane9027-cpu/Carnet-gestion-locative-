@@ -389,6 +389,7 @@ input:focus, select:focus, textarea:focus{ outline:2px solid var(--primary); out
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 function showFatalError(msg){
   const authScreen = document.getElementById('auth-screen');
@@ -427,6 +428,9 @@ if (typeof firebase === 'undefined') {
   firebase.initializeApp(firebaseConfig);
   auth = firebase.auth();
   db = firebase.firestore();
+  db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+    if (err.code === 'unimplemented') console.warn('Mode hors-ligne non supporté par ce navigateur.');
+  });
 }
 const ADMIN_EMAIL = 'rkane9027@gmail.com';
 
@@ -531,6 +535,22 @@ function monthLabel(k){
   const noms = ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Août','Sep','Oct','Nov','Déc'];
   const m = Number(parts[1]);
   return m ? `${noms[m-1]} ${parts[0]}` : (k || '—');
+}
+function shareMonthlySummary(){
+  const now = new Date();
+  const curKey = monthKey(now);
+  const revenue = cache.payments.filter(p => p.moisConcerne === curKey).reduce((s, p) => s + Number(p.montant || 0), 0);
+  const activeTenants = cache.tenants.filter(t => t.statut === 'actif');
+  const expected = activeTenants.reduce((s, t) => s + Number(t.loyerMensuel || 0), 0);
+  const lateIds = getLateTenantIds();
+  const lateCount = activeTenants.filter(t => lateIds.has(t.id)).length;
+  const totalProps = cache.properties.length;
+  const occupied = cache.properties.filter(p => p.statut === 'occupe').length;
+  const occRate = totalProps ? Math.round(occupied / totalProps * 100) : 0;
+  const mois = monthLabel(curKey);
+  const bailleur = landlordData?.nom || '';
+  const message = `📊 Résumé Loyer Pro — ${mois}\n\n💰 Revenus encaissés : ${fmtFCFA(revenue)} sur ${fmtFCFA(expected)} attendus\n⏰ Loyers en retard : ${lateCount}\n🏠 Occupation : ${occRate}% (${occupied}/${totalProps} biens)\n\nGénéré via Loyer Pro${bailleur ? ' — ' + bailleur : ''}.`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
 }
 function toast(msg, type){
   const c = document.getElementById('toast-container');
@@ -688,6 +708,7 @@ function renderBiens(){
   root.innerHTML = `
     <div class="view-header">
       <button class="btn-primary" data-action="add-property">+ Ajouter un bien</button>
+      <button class="btn-ghost" data-action="import-properties">Importer depuis Excel</button>
       <span class="dim">${cache.properties.length} / ${limit === Infinity ? '∞' : limit} biens · plan ${planLabel()}</span>
     </div>
     <div class="card">
@@ -752,7 +773,10 @@ function renderLocataires(){
   const root = document.getElementById('view-root');
   const lateIds = getLateTenantIds();
   root.innerHTML = `
-    <div class="view-header"><button class="btn-primary" data-action="add-tenant">+ Ajouter un locataire</button></div>
+    <div class="view-header">
+      <button class="btn-primary" data-action="add-tenant">+ Ajouter un locataire</button>
+      <button class="btn-ghost" data-action="import-tenants">Importer depuis Excel</button>
+    </div>
     <div class="card">
       ${cache.tenants.length === 0 ? `<p class="empty">Aucun locataire enregistré.</p>` : `
       <table class="data-table">
@@ -829,7 +853,7 @@ function renderPaiements(){
   root.innerHTML = `
     <div class="view-header">
       <button class="btn-primary" data-action="add-payment">+ Enregistrer un paiement</button>
-      <button class="btn-ghost" data-action="export-payments">Exporter en CSV</button>
+      <button class="btn-ghost" data-action="export-payments">Exporter en Excel</button>
     </div>
     <div class="card">
       <h3>Historique des paiements</h3>
@@ -846,7 +870,7 @@ function renderPaiements(){
               <td data-label="Date">${esc(p.datePaiement || '—')}</td>
               <td class="num" data-label="Montant">${fmtFCFA(p.montant)}</td>
               <td class="actions">
-                <button class="btn-icon" data-action="download-receipt" data-id="${p.id}" title="Télécharger la quittance">🧾</button>
+                <button class="btn-icon" data-action="download-receipt" data-id="${p.id}" title="Partager la quittance">🧾</button>
                 <button class="btn-icon" data-action="delete-payment" data-id="${p.id}" title="Supprimer">🗑</button>
               </td>
             </tr>`;
@@ -893,22 +917,146 @@ function deletePayment(id){
   if (!confirm('Supprimer ce paiement ?')) return;
   dbDelete('payments', id).then(() => toast('Paiement supprimé')).catch(err => toast('Erreur : ' + err.message, 'err'));
 }
-function exportPaymentsCSV(){
-  const rows = [['Locataire', 'Bien', 'Montant', 'Méthode', 'Mois', 'Date']];
-  [...cache.payments].sort((a, b) => (a.datePaiement || '').localeCompare(b.datePaiement || '')).forEach(p => {
+function buildPaymentsSheet(){
+  const rows = [...cache.payments].sort((a, b) => (a.datePaiement || '').localeCompare(b.datePaiement || '')).map(p => {
     const t = cache.tenants.find(x => x.id === p.tenantId);
     const prop = cache.properties.find(x => x.id === p.propertyId);
-    rows.push([t ? t.nom : '', prop ? prop.nom : '', p.montant, p.methode, p.moisConcerne, p.datePaiement]);
+    return {
+      'Locataire': t ? t.nom : '—', 'Bien': prop ? prop.nom : '—', 'Montant (FCFA)': Number(p.montant || 0),
+      'Méthode': p.methode || '—', 'Mois concerné': monthLabel(p.moisConcerne), 'Date de paiement': p.datePaiement || '—'
+    };
   });
-  const csv = rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
-  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = `paiements_${new Date().toISOString().slice(0, 10)}.csv`;
-  document.body.appendChild(a); a.click(); a.remove();
-  URL.revokeObjectURL(url);
+  return XLSX.utils.json_to_sheet(rows);
 }
-function generateReceipt(paymentId){
+function buildTenantsSheet(){
+  const rows = cache.tenants.map(t => {
+    const p = cache.properties.find(x => x.id === t.propertyId);
+    return {
+      'Nom': t.nom, 'Téléphone': t.telephone || '—', 'Bien': p ? p.nom : '—',
+      'Loyer mensuel (FCFA)': Number(t.loyerMensuel || 0), 'Caution (FCFA)': Number(t.caution || 0),
+      "Date d'entrée": t.dateEntree || '—', 'Statut': t.statut === 'actif' ? 'Actif' : 'Parti'
+    };
+  });
+  return XLSX.utils.json_to_sheet(rows);
+}
+function buildPropertiesSheet(){
+  const rows = cache.properties.map(p => ({
+    'Bien': p.nom, 'Quartier': p.quartier || '—', 'Type': p.type || '—',
+    'Loyer mensuel (FCFA)': Number(p.loyerMensuel || 0), 'Statut': p.statut === 'occupe' ? 'Occupé' : 'Vacant'
+  }));
+  return XLSX.utils.json_to_sheet(rows);
+}
+function buildMaintenanceSheet(){
+  const rows = cache.maintenance.map(m => {
+    const p = cache.properties.find(x => x.id === m.propertyId);
+    return {
+      'Ticket': m.titre, 'Bien': p ? p.nom : '—', 'Priorité': m.priorite,
+      'Statut': m.statut === 'ouvert' ? 'Ouvert' : (m.statut === 'en_cours' ? 'En cours' : 'Résolu'),
+      'Coût estimé (FCFA)': Number(m.coutEstime || 0), 'Date de création': m.dateCreation || '—'
+    };
+  });
+  return XLSX.utils.json_to_sheet(rows);
+}
+function autoWidth(ws){
+  if (!ws['!ref']) return;
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  const cols = [];
+  for (let C = range.s.c; C <= range.e.c; C++) {
+    let max = 8;
+    for (let R = range.s.r; R <= range.e.r; R++) {
+      const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
+      if (cell && cell.v != null) max = Math.max(max, String(cell.v).length + 2);
+    }
+    cols.push({ wch: Math.min(max, 40) });
+  }
+  ws['!cols'] = cols;
+}
+function exportPaymentsExcel(){
+  if (typeof XLSX === 'undefined') { toast('Bibliothèque Excel non chargée — vérifie ta connexion et réessaie.', 'err'); return; }
+  const ws = buildPaymentsSheet(); autoWidth(ws);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Paiements');
+  XLSX.writeFile(wb, `paiements_${new Date().toISOString().slice(0, 10)}.xlsx`);
+}
+function exportFullReportExcel(){
+  if (typeof XLSX === 'undefined') { toast('Bibliothèque Excel non chargée — vérifie ta connexion et réessaie.', 'err'); return; }
+  const wb = XLSX.utils.book_new();
+  const wsP = buildPaymentsSheet(); autoWidth(wsP); XLSX.utils.book_append_sheet(wb, wsP, 'Paiements');
+  const wsT = buildTenantsSheet(); autoWidth(wsT); XLSX.utils.book_append_sheet(wb, wsT, 'Locataires');
+  const wsB = buildPropertiesSheet(); autoWidth(wsB); XLSX.utils.book_append_sheet(wb, wsB, 'Biens');
+  const wsM = buildMaintenanceSheet(); autoWidth(wsM); XLSX.utils.book_append_sheet(wb, wsM, 'Maintenance');
+  XLSX.writeFile(wb, `rapport_loyerpro_${new Date().toISOString().slice(0, 10)}.xlsx`);
+}
+function triggerImport(kind){
+  if (typeof XLSX === 'undefined') { toast('Bibliothèque Excel non chargée — vérifie ta connexion et réessaie.', 'err'); return; }
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.xlsx,.xls,.csv';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    if (file) handleImportFile(file, kind);
+  };
+  input.click();
+}
+function handleImportFile(file, kind){
+  const reader = new FileReader();
+  reader.onload = evt => {
+    try {
+      const data = new Uint8Array(evt.target.result);
+      const wb = XLSX.read(data, { type: 'array' });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+      if (rows.length === 0) { toast('Fichier vide ou illisible.', 'err'); return; }
+      if (kind === 'properties') importProperties(rows);
+      else importTenants(rows);
+    } catch (err) {
+      toast('Erreur de lecture du fichier : ' + err.message, 'err');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+async function importProperties(rows){
+  const limit = propertyLimit();
+  let added = 0, skippedLimit = 0, skippedInvalid = 0;
+  for (const r of rows) {
+    if (cache.properties.length + added >= limit) { skippedLimit++; continue; }
+    const nom = String(r['Bien'] || r['Nom'] || '').trim();
+    const loyer = Number(r['Loyer mensuel (FCFA)'] ?? r['Loyer mensuel'] ?? r['Loyer'] ?? 0);
+    if (!nom || !loyer) { skippedInvalid++; continue; }
+    const statutRaw = String(r['Statut'] || '').trim().toLowerCase();
+    const statut = statutRaw.startsWith('occup') ? 'occupe' : 'vacant';
+    try {
+      await dbAdd('properties', { nom, quartier: String(r['Quartier'] || '').trim(), adresse: '', type: String(r['Type'] || 'Autre').trim(), loyerMensuel: loyer, statut });
+      added++;
+    } catch (err) { skippedInvalid++; }
+  }
+  let msg = `${added} bien${added !== 1 ? 's' : ''} importé${added !== 1 ? 's' : ''}.`;
+  if (skippedLimit) msg += ` ${skippedLimit} ignoré(s) — limite du plan atteinte.`;
+  if (skippedInvalid) msg += ` ${skippedInvalid} ligne(s) invalide(s) ignorée(s).`;
+  toast(msg, (skippedInvalid || skippedLimit) ? 'err' : undefined);
+}
+async function importTenants(rows){
+  let added = 0, skippedInvalid = 0, skippedNoProperty = 0;
+  for (const r of rows) {
+    const nom = String(r['Nom'] || '').trim();
+    const bienNom = String(r['Bien'] || '').trim();
+    const loyer = Number(r['Loyer mensuel (FCFA)'] ?? r['Loyer mensuel'] ?? r['Loyer'] ?? 0);
+    if (!nom) { skippedInvalid++; continue; }
+    const prop = cache.properties.find(p => (p.nom || '').trim().toLowerCase() === bienNom.toLowerCase());
+    if (!prop) { skippedNoProperty++; continue; }
+    const statutRaw = String(r['Statut'] || 'Actif').trim().toLowerCase();
+    const statut = statutRaw.startsWith('part') ? 'parti' : 'actif';
+    try {
+      await dbAdd('tenants', { nom, telephone: String(r['Téléphone'] || '').trim(), propertyId: prop.id, loyerMensuel: loyer || Number(prop.loyerMensuel || 0), caution: Number(r['Caution (FCFA)'] ?? r['Caution'] ?? 0), dateEntree: String(r["Date d'entrée"] || '').trim(), statut });
+      added++;
+    } catch (err) { skippedInvalid++; }
+  }
+  let msg = `${added} locataire${added !== 1 ? 's' : ''} importé${added !== 1 ? 's' : ''}.`;
+  if (skippedNoProperty) msg += ` ${skippedNoProperty} ignoré(s) — bien introuvable (vérifie l'orthographe).`;
+  if (skippedInvalid) msg += ` ${skippedInvalid} ligne(s) invalide(s) ignorée(s).`;
+  toast(msg, (skippedNoProperty || skippedInvalid) ? 'err' : undefined);
+}
+async function generateReceipt(paymentId){
   const p = cache.payments.find(x => x.id === paymentId);
   if (!p) { toast('Paiement introuvable', 'err'); return; }
   const t = cache.tenants.find(x => x.id === p.tenantId);
@@ -954,7 +1102,19 @@ function generateReceipt(paymentId){
   doc.setTextColor(0); doc.setFontSize(10);
   doc.text('Signature du bailleur', W - 14, y, { align: 'right' });
 
-  doc.save(`quittance_${(t ? t.nom : 'locataire').replace(/\s+/g, '_')}_${p.moisConcerne}.pdf`);
+  const fileName = `quittance_${(t ? t.nom : 'locataire').replace(/\s+/g, '_')}_${p.moisConcerne}.pdf`;
+
+  try {
+    const pdfBlob = doc.output('blob');
+    const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: 'Quittance de loyer', text: `Quittance de loyer — ${monthLabel(p.moisConcerne)}` });
+      return;
+    }
+  } catch (err) {
+    if (err?.name === 'AbortError') return;
+  }
+  doc.save(fileName);
 }
 
 /* ======================================================
@@ -1072,8 +1232,24 @@ function renderDashboard(){
     }
   }
 
+  let onboardingCard = '';
+  const hasProperty = cache.properties.length > 0;
+  const hasTenant = cache.tenants.length > 0;
+  const hasPayment = cache.payments.length > 0;
+  if (!hasProperty || !hasTenant || !hasPayment) {
+    const step = (done, label, href) => `<div class="ledger-row"><span>${done ? '✅' : '⬜'} ${label}</span>${!done ? `<a href="${href}" class="btn-ghost" style="text-decoration:none;">Aller</a>` : ''}</div>`;
+    onboardingCard = `<div class="card">
+      <h3>🚀 Démarrage rapide</h3>
+      ${step(hasProperty, 'Ajoute ton premier bien', '#/biens')}
+      ${step(hasTenant, 'Ajoute un locataire', '#/locataires')}
+      ${step(hasPayment, 'Enregistre ton premier paiement', '#/paiements')}
+    </div>`;
+  }
+
   root.innerHTML = `
+    <div class="view-header"><button class="btn-ghost" data-action="share-summary">📤 Partager le résumé (WhatsApp)</button></div>
     ${trialBanner}
+    ${onboardingCard}
     <div class="stat-grid">
       <div class="stat-card">
         <div class="stat-top"><div class="stat-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="5" width="16" height="11" rx="2"/><path d="M2 9h16"/><circle cx="14" cy="13" r="1.2"/></svg></div></div>
@@ -1183,14 +1359,14 @@ function renderRapports(){
             <span class="amount">${fmtFCFA(total)}</span>
           </div>`).join('')}
     </div>
-    <div class="view-header"><button class="btn-ghost" data-action="export-payments">Exporter tous les paiements (CSV)</button></div>`;
+    <div class="view-header"><button class="btn-ghost" data-action="export-full-report">Exporter le rapport complet (Excel)</button></div>`;
 }
 
 /* ======================================================
    ABONNEMENT (pricing + flow Wave manuel)
    ====================================================== */
 const PLANS = {
-  essentiel: { nom: 'Essentiel', prix: 2000, biens: 'Jusqu\'à 10 biens', features: ['Suivi loyers & paiements', 'Locataires illimités', 'Maintenance', 'Export CSV'], waveLink: 'https://pay.wave.com/m/M_ci_OaBqxSO_TLoN/c/ci/?amount=2000' },
+  essentiel: { nom: 'Essentiel', prix: 2000, biens: 'Jusqu\'à 10 biens', features: ['Suivi loyers & paiements', 'Locataires illimités', 'Maintenance', 'Export Excel'], waveLink: 'https://pay.wave.com/m/M_ci_OaBqxSO_TLoN/c/ci/?amount=2000' },
   pro: { nom: 'Pro', prix: 7000, biens: 'Biens illimités', features: ['Tout Essentiel', 'Biens illimités', 'Rapports avancés', 'Support prioritaire'], waveLink: 'https://pay.wave.com/m/M_ci_OaBqxSO_TLoN/c/ci/?amount=7000' }
 };
 
@@ -1392,7 +1568,7 @@ function showTrialBlockedModal(){
   `, () => { closeModal(); location.hash = '#/abonnement'; }, 'Voir les plans');
 }
 
-const GATED_ACTIONS = new Set(['add-property', 'add-tenant', 'add-payment', 'add-maintenance', 'send-assistant']);
+const GATED_ACTIONS = new Set(['add-property', 'add-tenant', 'add-payment', 'add-maintenance', 'send-assistant', 'import-properties', 'import-tenants']);
 
 function onViewClick(e){
   const btn = e.target.closest('[data-action]');
@@ -1416,12 +1592,16 @@ function onViewClick(e){
     'add-payment': () => openPaymentModal(),
     'delete-payment': () => deletePayment(id),
     'download-receipt': () => generateReceipt(id),
-    'export-payments': () => exportPaymentsCSV(),
+    'export-payments': () => exportPaymentsExcel(),
+    'export-full-report': () => exportFullReportExcel(),
     'add-maintenance': () => openMaintenanceModal(),
     'delete-maintenance': () => deleteMaintenance(id),
     'send-assistant': () => sendAssistantMessage(),
     'request-plan': () => openPlanRequestModal(id),
     'whatsapp-reminder': () => sendWhatsAppReminder(id),
+    'share-summary': () => shareMonthlySummary(),
+    'import-properties': () => triggerImport('properties'),
+    'import-tenants': () => triggerImport('tenants'),
   };
   if (map[action]) map[action]();
 }
