@@ -487,6 +487,45 @@ function hasActiveAccess(){
   }
   return false;
 }
+function planLabel(){
+  if (demoMode || landlordData?.isAdmin) return 'Admin';
+  if (landlordData?.plan === 'pro') return 'Pro';
+  if (landlordData?.plan === 'essentiel') return 'Essentiel';
+  return 'Essai';
+}
+function propertyLimit(){
+  if (demoMode || landlordData?.isAdmin) return Infinity;
+  if (landlordData?.plan === 'pro') return Infinity;
+  return 10;
+}
+function getLateTenantIds(){
+  const curKey = monthKey(new Date());
+  const paidIds = new Set(cache.payments.filter(p => p.moisConcerne === curKey).map(p => p.tenantId));
+  return new Set(cache.tenants.filter(t => t.statut === 'actif' && !paidIds.has(t.id)).map(t => t.id));
+}
+function waLinkFor(tel, message){
+  if (!tel) return null;
+  let digits = String(tel).replace(/\D/g, '');
+  if (!digits) return null;
+  if (digits.startsWith('00')) digits = digits.slice(2);
+  if (!digits.startsWith('225')) {
+    if (digits.startsWith('0')) digits = digits.slice(1);
+    digits = '225' + digits;
+  }
+  return `https://wa.me/${digits}${message ? '?text=' + encodeURIComponent(message) : ''}`;
+}
+function sendWhatsAppReminder(tenantId){
+  const t = cache.tenants.find(x => x.id === tenantId);
+  if (!t) { toast('Locataire introuvable', 'err'); return; }
+  if (!t.telephone) { toast('Aucun numéro de téléphone pour ce locataire.', 'err'); return; }
+  const p = cache.properties.find(x => x.id === t.propertyId);
+  const mois = monthLabel(monthKey(new Date()));
+  const bailleur = landlordData?.nom || '';
+  const message = `Bonjour ${t.nom}, ceci est un rappel amical : le loyer du mois de ${mois}${p ? ` pour ${p.nom}` : ''} n'a pas encore été reçu. Merci de bien vouloir régulariser dans les meilleurs délais. Cordialement${bailleur ? ', ' + bailleur : ''}.`;
+  const link = waLinkFor(t.telephone, message);
+  if (!link) { toast('Numéro de téléphone invalide.', 'err'); return; }
+  window.open(link, '_blank');
+}
 function monthLabel(k){
   const parts = String(k||'').split('-');
   const noms = ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Août','Sep','Oct','Nov','Déc'];
@@ -645,23 +684,30 @@ function updateMaintenanceStatus(id, statut){
    ====================================================== */
 function renderBiens(){
   const root = document.getElementById('view-root');
+  const limit = propertyLimit();
   root.innerHTML = `
-    <div class="view-header"><button class="btn-primary" data-action="add-property">+ Ajouter un bien</button></div>
-    <div class="card-grid">
-      ${cache.properties.length === 0 ? `<p class="empty">Aucun bien enregistré. Ajoutez votre premier bien pour commencer.</p>` :
-        cache.properties.map(p => `
-          <div class="card">
-            <div class="card-top">
-              <strong>${esc(p.nom)}</strong>
-              <span class="badge-stamp ${p.statut === 'occupe' ? 'occupied' : 'vacant'}">${p.statut === 'occupe' ? 'Occupé' : 'Vacant'}</span>
-            </div>
-            <p class="dim">${esc(p.quartier || '')} · ${esc(p.type || '')}</p>
-            <p class="amount">${fmtFCFA(p.loyerMensuel)} / mois</p>
-            <div class="row-actions">
-              <button class="btn-ghost" data-action="edit-property" data-id="${p.id}">Modifier</button>
-              <button class="btn-icon" data-action="delete-property" data-id="${p.id}" title="Supprimer">🗑</button>
-            </div>
-          </div>`).join('')}
+    <div class="view-header">
+      <button class="btn-primary" data-action="add-property">+ Ajouter un bien</button>
+      <span class="dim">${cache.properties.length} / ${limit === Infinity ? '∞' : limit} biens · plan ${planLabel()}</span>
+    </div>
+    <div class="card">
+      ${cache.properties.length === 0 ? `<p class="empty">Aucun bien enregistré. Ajoutez votre premier bien pour commencer.</p>` : `
+      <table class="data-table">
+        <thead><tr><th>Bien</th><th>Quartier</th><th>Type</th><th class="num">Loyer</th><th>Statut</th><th></th></tr></thead>
+        <tbody>
+          ${cache.properties.map(p => `<tr>
+              <td class="name">${esc(p.nom)}</td>
+              <td data-label="Quartier">${esc(p.quartier || '—')}</td>
+              <td data-label="Type">${esc(p.type || '—')}</td>
+              <td class="num" data-label="Loyer">${fmtFCFA(p.loyerMensuel)}</td>
+              <td data-label="Statut"><span class="badge-stamp ${p.statut === 'occupe' ? 'occupied' : 'vacant'}">${p.statut === 'occupe' ? 'Occupé' : 'Vacant'}</span></td>
+              <td class="actions">
+                <button class="btn-ghost" data-action="edit-property" data-id="${p.id}">Modifier</button>
+                <button class="btn-icon" data-action="delete-property" data-id="${p.id}" title="Supprimer">🗑</button>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`}
     </div>`;
 }
 function openPropertyModal(existing){
@@ -704,25 +750,35 @@ function deleteProperty(id){
    ====================================================== */
 function renderLocataires(){
   const root = document.getElementById('view-root');
+  const lateIds = getLateTenantIds();
   root.innerHTML = `
     <div class="view-header"><button class="btn-primary" data-action="add-tenant">+ Ajouter un locataire</button></div>
-    <div class="card-grid">
-      ${cache.tenants.length === 0 ? `<p class="empty">Aucun locataire enregistré.</p>` :
-        cache.tenants.map(t => {
-          const p = cache.properties.find(x => x.id === t.propertyId);
-          return `<div class="card">
-            <div class="card-top">
-              <strong>${esc(t.nom)}</strong>
-              <span class="badge-stamp ${t.statut === 'actif' ? 'paid' : 'vacant'}">${t.statut === 'actif' ? 'Actif' : 'Parti'}</span>
-            </div>
-            <p class="dim">${esc(p ? p.nom : 'Bien supprimé')} · ${esc(t.telephone || '')}</p>
-            <p class="amount">${fmtFCFA(t.loyerMensuel)} / mois</p>
-            <div class="row-actions">
-              <button class="btn-ghost" data-action="edit-tenant" data-id="${t.id}">Modifier</button>
-              <button class="btn-icon" data-action="delete-tenant" data-id="${t.id}" title="Supprimer">🗑</button>
-            </div>
-          </div>`;
-        }).join('')}
+    <div class="card">
+      ${cache.tenants.length === 0 ? `<p class="empty">Aucun locataire enregistré.</p>` : `
+      <table class="data-table">
+        <thead><tr><th>Locataire</th><th>Bien</th><th>Téléphone</th><th class="num">Loyer</th><th>Statut</th><th></th></tr></thead>
+        <tbody>
+          ${cache.tenants.map(t => {
+            const p = cache.properties.find(x => x.id === t.propertyId);
+            const isLate = lateIds.has(t.id);
+            const statusBadge = t.statut !== 'actif'
+              ? `<span class="badge-stamp vacant">Parti</span>`
+              : isLate ? `<span class="badge-stamp late">En retard</span>` : `<span class="badge-stamp paid">À jour</span>`;
+            return `<tr>
+              <td class="name">${esc(t.nom)}</td>
+              <td data-label="Bien">${esc(p ? p.nom : 'Bien supprimé')}</td>
+              <td data-label="Téléphone">${esc(t.telephone || '—')}</td>
+              <td class="num" data-label="Loyer">${fmtFCFA(t.loyerMensuel)}</td>
+              <td data-label="Statut">${statusBadge}</td>
+              <td class="actions">
+                ${isLate && t.telephone ? `<button class="btn-icon" data-action="whatsapp-reminder" data-id="${t.id}" title="Rappel WhatsApp">💬</button>` : ''}
+                <button class="btn-ghost" data-action="edit-tenant" data-id="${t.id}">Modifier</button>
+                <button class="btn-icon" data-action="delete-tenant" data-id="${t.id}" title="Supprimer">🗑</button>
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`}
     </div>`;
 }
 function openTenantModal(existing){
@@ -908,29 +964,33 @@ function renderMaintenance(){
   const root = document.getElementById('view-root');
   root.innerHTML = `
     <div class="view-header"><button class="btn-primary" data-action="add-maintenance">+ Nouveau ticket</button></div>
-    <div class="card-grid">
-      ${cache.maintenance.length === 0 ? `<p class="empty">Aucun ticket de maintenance.</p>` :
-        cache.maintenance.map(m => {
-          const p = cache.properties.find(x => x.id === m.propertyId);
-          const prioClass = m.priorite === 'Haute' ? 'late' : (m.priorite === 'Moyenne' ? 'occupied' : 'paid');
-          return `<div class="card">
-            <div class="card-top">
-              <strong>${esc(m.titre)}</strong>
-              <span class="badge-stamp ${prioClass}">${esc(m.priorite)}</span>
-            </div>
-            <p class="dim">${esc(p ? p.nom : '—')}</p>
-            <p>${esc(m.description || '')}</p>
-            <div class="row-actions">
-              <select onchange="updateMaintenanceStatus('${m.id}', this.value)">
-                <option value="ouvert" ${m.statut === 'ouvert' ? 'selected' : ''}>Ouvert</option>
-                <option value="en_cours" ${m.statut === 'en_cours' ? 'selected' : ''}>En cours</option>
-                <option value="resolu" ${m.statut === 'resolu' ? 'selected' : ''}>Résolu</option>
-              </select>
-              <span class="amount">${m.coutEstime ? fmtFCFA(m.coutEstime) : '—'}</span>
-              <button class="btn-icon" data-action="delete-maintenance" data-id="${m.id}" title="Supprimer">🗑</button>
-            </div>
-          </div>`;
-        }).join('')}
+    <div class="card">
+      ${cache.maintenance.length === 0 ? `<p class="empty">Aucun ticket de maintenance.</p>` : `
+      <table class="data-table">
+        <thead><tr><th>Ticket</th><th>Bien</th><th>Priorité</th><th>Statut</th><th class="num">Coût</th><th></th></tr></thead>
+        <tbody>
+          ${cache.maintenance.map(m => {
+            const p = cache.properties.find(x => x.id === m.propertyId);
+            const prioClass = m.priorite === 'Haute' ? 'late' : (m.priorite === 'Moyenne' ? 'occupied' : 'paid');
+            return `<tr>
+              <td class="name">${esc(m.titre)}${m.description ? `<div class="dim" style="font-weight:400;font-size:12px;margin-top:2px;">${esc(m.description)}</div>` : ''}</td>
+              <td data-label="Bien">${esc(p ? p.nom : '—')}</td>
+              <td data-label="Priorité"><span class="badge-stamp ${prioClass}">${esc(m.priorite)}</span></td>
+              <td data-label="Statut">
+                <select onchange="updateMaintenanceStatus('${m.id}', this.value)">
+                  <option value="ouvert" ${m.statut === 'ouvert' ? 'selected' : ''}>Ouvert</option>
+                  <option value="en_cours" ${m.statut === 'en_cours' ? 'selected' : ''}>En cours</option>
+                  <option value="resolu" ${m.statut === 'resolu' ? 'selected' : ''}>Résolu</option>
+                </select>
+              </td>
+              <td class="num" data-label="Coût">${m.coutEstime ? fmtFCFA(m.coutEstime) : '—'}</td>
+              <td class="actions">
+                <button class="btn-icon" data-action="delete-maintenance" data-id="${m.id}" title="Supprimer">🗑</button>
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`}
     </div>`;
 }
 function openMaintenanceModal(){
@@ -1058,7 +1118,10 @@ function renderDashboard(){
           lateTenants.map(t => `
             <div class="ledger-row">
               <span>${esc(t.nom)}</span>
-              <span class="amount">${fmtFCFA(t.loyerMensuel)}</span>
+              <span style="display:flex;align-items:center;gap:10px;">
+                <span class="amount">${fmtFCFA(t.loyerMensuel)}</span>
+                ${t.telephone ? `<button class="btn-icon" data-action="whatsapp-reminder" data-id="${t.id}" title="Rappel WhatsApp">💬</button>` : ''}
+              </span>
             </div>`).join('')}
       </div>
     </div>
@@ -1337,7 +1400,14 @@ function onViewClick(e){
   const action = btn.dataset.action, id = btn.dataset.id;
   if (GATED_ACTIONS.has(action) && !hasActiveAccess()) { showTrialBlockedModal(); return; }
   const map = {
-    'add-property': () => openPropertyModal(),
+    'add-property': () => {
+      const limit = propertyLimit();
+      if (cache.properties.length >= limit) {
+        openModal('Limite de biens atteinte', `<p class="dim">Ton plan actuel (${planLabel()}) autorise jusqu'à ${limit} biens. Passe au plan Pro pour un nombre illimité de biens.</p>`, () => { closeModal(); location.hash = '#/abonnement'; }, 'Voir les plans');
+        return;
+      }
+      openPropertyModal();
+    },
     'edit-property': () => openPropertyModal(cache.properties.find(p => p.id === id)),
     'delete-property': () => deleteProperty(id),
     'add-tenant': () => openTenantModal(),
@@ -1351,6 +1421,7 @@ function onViewClick(e){
     'delete-maintenance': () => deleteMaintenance(id),
     'send-assistant': () => sendAssistantMessage(),
     'request-plan': () => openPlanRequestModal(id),
+    'whatsapp-reminder': () => sendWhatsAppReminder(id),
   };
   if (map[action]) map[action]();
 }
