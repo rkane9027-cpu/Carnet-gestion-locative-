@@ -187,6 +187,7 @@ input:focus, select:focus, textarea:focus{ outline:2px solid var(--primary); out
 .badge-stamp.late{ color:var(--danger); background:var(--danger-soft); }
 .badge-stamp.vacant{ color:var(--text-dim); background:var(--surface-2); }
 .badge-stamp.occupied{ color:var(--primary); background:var(--primary-soft); }
+.badge-stamp.warn{ color:var(--warn); background:var(--warn-soft); }
 
 .view-header{ display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap; }
 
@@ -222,7 +223,7 @@ input:focus, select:focus, textarea:focus{ outline:2px solid var(--primary); out
   .data-table td.name{ font-size:14.5px; }
   .data-table td.name::before{ content:none; }
   .data-table td.num{ text-align:right; }
-  .data-table td.actions{ display:flex; justify-content:flex-end; padding-top:6px; }
+  .data-table td.actions{ display:flex; justify-content:flex-end; flex-wrap:wrap; gap:6px; padding-top:6px; }
   .data-table td.actions::before{ content:none; }
 }
 
@@ -280,9 +281,10 @@ input:focus, select:focus, textarea:focus{ outline:2px solid var(--primary); out
     display:flex; position:fixed; bottom:0; left:0; right:0; background:var(--surface);
     border-top:1px solid var(--border); z-index:40; box-shadow:0 -6px 20px rgba(15,22,30,.1);
     padding-bottom:env(safe-area-inset-bottom, 0);
+    overflow-x:auto; -webkit-overflow-scrolling:touch;
   }
   .mobile-tabbar a{
-    flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;
+    flex:0 0 68px; display:flex; flex-direction:column; align-items:center; gap:3px;
     text-align:center; padding:9px 2px 8px; font-size:10px; color:var(--text-dim); font-weight:600;
     border-top:2px solid transparent; transition:color .15s, border-color .15s, background .15s;
   }
@@ -347,6 +349,7 @@ input:focus, select:focus, textarea:focus{ outline:2px solid var(--primary); out
       <a href="#/locataires" data-route="locataires"><svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="7" r="3"/><path d="M4 17a6 6 0 0 1 12 0"/></svg>Locataires</a>
       <a href="#/paiements" data-route="paiements"><svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="5" width="16" height="11" rx="2"/><path d="M2 9h16"/><circle cx="14" cy="13" r="1.2"/></svg>Paiements</a>
       <a href="#/maintenance" data-route="maintenance"><svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="2.6"/><line x1="10" y1="2" x2="10" y2="5"/><line x1="10" y1="15" x2="10" y2="18"/><line x1="2" y1="10" x2="5" y2="10"/><line x1="15" y1="10" x2="18" y2="10"/><line x1="4.5" y1="4.5" x2="6.5" y2="6.5"/><line x1="13.5" y1="13.5" x2="15.5" y2="15.5"/><line x1="4.5" y1="15.5" x2="6.5" y2="13.5"/><line x1="13.5" y1="6.5" x2="15.5" y2="4.5"/></svg>Maintenance</a>
+      <a href="#/depenses" data-route="depenses"><svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 3v10M6 9l4 4 4-4"/><path d="M3 15h14v2H3z"/></svg>Dépenses</a>
       <a href="#/rapports" data-route="rapports"><svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="10" width="3" height="7" rx="0.5"/><rect x="8.5" y="5" width="3" height="12" rx="0.5"/><rect x="14" y="12" width="3" height="5" rx="0.5"/></svg>Rapports</a>
       <a href="#/abonnement" data-route="abonnement"><svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="5" width="16" height="11" rx="2"/><line x1="2" y1="9" x2="18" y2="9"/></svg>Abonnement</a>
       <a href="#/assistant" data-route="assistant"><svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="4" width="16" height="10" rx="3"/><polygon points="6,14 6,18 10,14" fill="currentColor" stroke="none"/></svg>Assistant IA</a>
@@ -378,6 +381,8 @@ input:focus, select:focus, textarea:focus{ outline:2px solid var(--primary); out
     <a href="#/locataires" data-route="locataires"><svg class="tab-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="7" r="3"/><path d="M4 17a6 6 0 0 1 12 0"/></svg><span>Locataires</span></a>
     <a href="#/paiements" data-route="paiements"><svg class="tab-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="5" width="16" height="11" rx="2"/><path d="M2 9h16"/><circle cx="14" cy="13" r="1.2"/></svg><span>Paiements</span></a>
     <a href="#/maintenance" data-route="maintenance"><svg class="tab-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="2.6"/><line x1="10" y1="2" x2="10" y2="5"/><line x1="10" y1="15" x2="10" y2="18"/><line x1="2" y1="10" x2="5" y2="10"/><line x1="15" y1="10" x2="18" y2="10"/><line x1="4.5" y1="4.5" x2="6.5" y2="6.5"/><line x1="13.5" y1="13.5" x2="15.5" y2="15.5"/><line x1="4.5" y1="15.5" x2="6.5" y2="13.5"/><line x1="13.5" y1="6.5" x2="15.5" y2="4.5"/></svg><span>Maint.</span></a>
+    <a href="#/depenses" data-route="depenses"><svg class="tab-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 3v10M6 9l4 4 4-4"/><path d="M3 15h14v2H3z"/></svg><span>Dépenses</span></a>
+    <a href="#/rapports" data-route="rapports"><svg class="tab-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="10" width="3" height="7" rx="0.5"/><rect x="8.5" y="5" width="3" height="12" rx="0.5"/><rect x="14" y="12" width="3" height="5" rx="0.5"/></svg><span>Rapports</span></a>
     <a href="#/abonnement" data-route="abonnement"><svg class="tab-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="5" width="16" height="11" rx="2"/><line x1="2" y1="9" x2="18" y2="9"/></svg><span>Abo.</span></a>
     <a href="#/assistant" data-route="assistant"><svg class="tab-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="4" width="16" height="10" rx="3"/><polygon points="6,14 6,18 10,14" fill="currentColor" stroke="none"/></svg><span>IA</span></a>
   </nav>
@@ -444,7 +449,7 @@ if ('serviceWorker' in navigator) {
 let currentUser = null;
 let landlordData = null;
 let unsubscribers = [];
-let cache = { properties: [], tenants: [], payments: [], maintenance: [] };
+let cache = { properties: [], tenants: [], payments: [], maintenance: [], buildings: [], expenses: [] };
 let demoMode = false;
 let demoRequests = [];
 let assistantMessages = [];
@@ -637,7 +642,7 @@ function enterDemoMode(){
 function exitDemoMode(){
   demoMode = false;
   currentUser = null; landlordData = null;
-  cache = { properties: [], tenants: [], payments: [], maintenance: [] };
+  cache = { properties: [], tenants: [], payments: [], maintenance: [], buildings: [], expenses: [] };
   demoRequests = [];
   assistantMessages = [];
   document.getElementById('app-shell').classList.add('hidden');
@@ -702,21 +707,34 @@ function updateMaintenanceStatus(id, statut){
 /* ======================================================
    BIENS
    ====================================================== */
+function openBuildingModal(existing){
+  const isEdit = !!existing;
+  openModal(isEdit ? "Modifier l'immeuble" : 'Ajouter un immeuble', `
+    <label>Nom de l'immeuble<input name="nom" value="${esc(existing?.nom || '')}" required placeholder="Ex : Résidence Zenith"></label>
+    <label>Quartier<input name="quartier" value="${esc(existing?.quartier || '')}" placeholder="Ex : Cocody, Yopougon..."></label>
+    <label>Adresse<input name="adresse" value="${esc(existing?.adresse || '')}" placeholder="Adresse complète"></label>
+  `, async fd => {
+    const data = { nom: fd.get('nom').trim(), quartier: fd.get('quartier').trim(), adresse: fd.get('adresse').trim() };
+    try {
+      if (isEdit) await dbUpdate('buildings', existing.id, data);
+      else await dbAdd('buildings', data);
+      closeModal(); toast(isEdit ? 'Immeuble mis à jour' : 'Immeuble ajouté');
+    } catch (err) { toast('Erreur : ' + err.message, 'err'); }
+  });
+}
+async function deleteBuilding(id){
+  if (!confirm("Supprimer cet immeuble ? Les appartements liés deviendront des biens indépendants (ils ne seront pas supprimés).")) return;
+  try {
+    const linked = cache.properties.filter(p => p.buildingId === id);
+    for (const p of linked) await dbUpdate('properties', p.id, { buildingId: '' });
+    await dbDelete('buildings', id);
+    toast('Immeuble supprimé');
+  } catch (err) { toast('Erreur : ' + err.message, 'err'); }
+}
 function renderBiens(){
   const root = document.getElementById('view-root');
   const limit = propertyLimit();
-  root.innerHTML = `
-    <div class="view-header">
-      <button class="btn-primary" data-action="add-property">+ Ajouter un bien</button>
-      <button class="btn-ghost" data-action="import-properties">Importer depuis Excel</button>
-      <span class="dim">${cache.properties.length} / ${limit === Infinity ? '∞' : limit} biens · plan ${planLabel()}</span>
-    </div>
-    <div class="card">
-      ${cache.properties.length === 0 ? `<p class="empty">Aucun bien enregistré. Ajoutez votre premier bien pour commencer.</p>` : `
-      <table class="data-table">
-        <thead><tr><th>Bien</th><th>Quartier</th><th>Type</th><th class="num">Loyer</th><th>Statut</th><th></th></tr></thead>
-        <tbody>
-          ${cache.properties.map(p => `<tr>
+  const propRow = p => `<tr>
               <td class="name">${esc(p.nom)}</td>
               <td data-label="Quartier">${esc(p.quartier || '—')}</td>
               <td data-label="Type">${esc(p.type || '—')}</td>
@@ -726,15 +744,62 @@ function renderBiens(){
                 <button class="btn-ghost" data-action="edit-property" data-id="${p.id}">Modifier</button>
                 <button class="btn-icon" data-action="delete-property" data-id="${p.id}" title="Supprimer">🗑</button>
               </td>
-            </tr>`).join('')}
-        </tbody>
+            </tr>`;
+  const buildingIds = new Set(cache.buildings.map(b => b.id));
+  const standalone = cache.properties.filter(p => !p.buildingId || !buildingIds.has(p.buildingId));
+
+  const buildingBlocks = cache.buildings.map(b => {
+    const units = cache.properties.filter(p => p.buildingId === b.id);
+    const occupied = units.filter(u => u.statut === 'occupe').length;
+    const rate = units.length ? Math.round(occupied / units.length * 100) : 0;
+    return `<div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
+        <div>
+          <h3 style="margin:0;">🏢 ${esc(b.nom)}</h3>
+          <span class="dim">${esc(b.quartier || '')}${units.length ? ` · ${units.length} appart. · ${occupied}/${units.length} occupés (${rate}%)` : ' · Aucun appartement'}</span>
+        </div>
+      </div>
+      <div class="row-actions" style="margin-bottom:12px;">
+        <button class="btn-ghost" data-action="add-unit" data-id="${b.id}">+ Ajouter un appartement</button>
+        <button class="btn-ghost" data-action="edit-building" data-id="${b.id}">Modifier l'immeuble</button>
+        <button class="btn-icon" data-action="delete-building" data-id="${b.id}" title="Supprimer l'immeuble">🗑</button>
+      </div>
+      ${units.length === 0 ? `<p class="empty">Aucun appartement dans cet immeuble pour l'instant.</p>` : `
+      <table class="data-table">
+        <thead><tr><th>Bien</th><th>Quartier</th><th>Type</th><th class="num">Loyer</th><th>Statut</th><th></th></tr></thead>
+        <tbody>${units.map(propRow).join('')}</tbody>
+      </table>`}
+    </div>`;
+  }).join('');
+
+  root.innerHTML = `
+    <div class="view-header">
+      <button class="btn-primary" data-action="add-property">+ Ajouter un bien</button>
+      <button class="btn-ghost" data-action="add-building">+ Ajouter un immeuble</button>
+      <button class="btn-ghost" data-action="import-properties">Importer depuis Excel</button>
+      <span class="dim">${cache.properties.length} / ${limit === Infinity ? '∞' : limit} biens · plan ${planLabel()}</span>
+    </div>
+    ${buildingBlocks}
+    ${cache.buildings.length > 0 ? `<h3 style="margin:20px 0 10px;">Biens indépendants</h3>` : ''}
+    <div class="card">
+      ${standalone.length === 0 ? `<p class="empty">${cache.buildings.length > 0 ? 'Aucun bien indépendant.' : 'Aucun bien enregistré. Ajoutez votre premier bien pour commencer.'}</p>` : `
+      <table class="data-table">
+        <thead><tr><th>Bien</th><th>Quartier</th><th>Type</th><th class="num">Loyer</th><th>Statut</th><th></th></tr></thead>
+        <tbody>${standalone.map(propRow).join('')}</tbody>
       </table>`}
     </div>`;
 }
-function openPropertyModal(existing){
+function openPropertyModal(existing, presetBuildingId){
   const isEdit = !!existing;
+  const currentBuildingId = existing?.buildingId || presetBuildingId || '';
   openModal(isEdit ? 'Modifier le bien' : 'Ajouter un bien', `
-    <label>Nom du bien<input name="nom" value="${esc(existing?.nom || '')}" required placeholder="Ex : Villa Riviera 3"></label>
+    <label>Nom du bien<input name="nom" value="${esc(existing?.nom || '')}" required placeholder="Ex : Villa Riviera 3 ou Appt 2B"></label>
+    <label>Immeuble (optionnel)
+      <select name="buildingId">
+        <option value="">— Bien indépendant —</option>
+        ${cache.buildings.map(b => `<option value="${b.id}" ${currentBuildingId === b.id ? 'selected' : ''}>${esc(b.nom)}</option>`).join('')}
+      </select>
+    </label>
     <label>Quartier<input name="quartier" value="${esc(existing?.quartier || '')}" required placeholder="Ex : Cocody, Yopougon..."></label>
     <label>Adresse<input name="adresse" value="${esc(existing?.adresse || '')}" placeholder="Adresse complète"></label>
     <label>Type
@@ -751,7 +816,7 @@ function openPropertyModal(existing){
     </label>
   `, async fd => {
     const data = {
-      nom: fd.get('nom').trim(), quartier: fd.get('quartier').trim(), adresse: fd.get('adresse').trim(),
+      nom: fd.get('nom').trim(), buildingId: fd.get('buildingId') || '', quartier: fd.get('quartier').trim(), adresse: fd.get('adresse').trim(),
       type: fd.get('type'), loyerMensuel: Number(fd.get('loyerMensuel')), statut: fd.get('statut')
     };
     try {
@@ -769,6 +834,37 @@ function deleteProperty(id){
 /* ======================================================
    LOCATAIRES
    ====================================================== */
+function reliabilityScore(tenantId){
+  const t = cache.tenants.find(x => x.id === tenantId);
+  if (!t || !t.dateEntree) return null;
+  const start = new Date(t.dateEntree);
+  const now = new Date();
+  if (isNaN(start.getTime()) || start > now) return null;
+  const monthsElapsed = Math.max(1, (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth()) + 1);
+  const paidMonths = new Set(cache.payments.filter(p => p.tenantId === tenantId).map(p => p.moisConcerne)).size;
+  return Math.min(100, Math.round(paidMonths / monthsElapsed * 100));
+}
+function reliabilityBadge(score){
+  if (score === null) return `<span class="dim">—</span>`;
+  let cls, label;
+  if (score >= 90) { cls = 'paid'; label = 'Excellent'; }
+  else if (score >= 70) { cls = 'occupied'; label = 'Bon'; }
+  else if (score >= 50) { cls = 'warn'; label = 'Moyen'; }
+  else { cls = 'late'; label = 'Faible'; }
+  return `<span class="badge-stamp ${cls}">${label} (${score}%)</span>`;
+}
+function shareTenantPortal(tenantId){
+  const t = cache.tenants.find(x => x.id === tenantId);
+  if (!t) { toast('Locataire introuvable', 'err'); return; }
+  if (!t.portalToken) { toast('Lien pas encore prêt, réessaie dans un instant.', 'err'); return; }
+  const url = `${location.origin}${location.pathname.replace(/[^/]+$/, '')}locataire-portail.html?token=${t.portalToken}`;
+  if (navigator.share) {
+    navigator.share({ title: 'Mon espace locataire — Loyer Pro', text: `Bonjour ${t.nom}, voici le lien pour suivre tes paiements de loyer :`, url }).catch(() => {});
+  } else {
+    navigator.clipboard?.writeText(url);
+    toast('Lien copié dans le presse-papiers');
+  }
+}
 function renderLocataires(){
   const root = document.getElementById('view-root');
   const lateIds = getLateTenantIds();
@@ -780,22 +876,27 @@ function renderLocataires(){
     <div class="card">
       ${cache.tenants.length === 0 ? `<p class="empty">Aucun locataire enregistré.</p>` : `
       <table class="data-table">
-        <thead><tr><th>Locataire</th><th>Bien</th><th>Téléphone</th><th class="num">Loyer</th><th>Statut</th><th></th></tr></thead>
+        <thead><tr><th>Locataire</th><th>Bien</th><th>Téléphone</th><th class="num">Loyer</th><th>Fiabilité</th><th>Statut</th><th></th></tr></thead>
         <tbody>
           ${cache.tenants.map(t => {
             const p = cache.properties.find(x => x.id === t.propertyId);
             const isLate = lateIds.has(t.id);
-            const statusBadge = t.statut !== 'actif'
+            const needsCaution = t.statut !== 'actif' && (t.cautionStatut === 'a_traiter' || !t.cautionStatut);
+            const statusBadge = (t.statut !== 'actif'
               ? `<span class="badge-stamp vacant">Parti</span>`
-              : isLate ? `<span class="badge-stamp late">En retard</span>` : `<span class="badge-stamp paid">À jour</span>`;
+              : isLate ? `<span class="badge-stamp late">En retard</span>` : `<span class="badge-stamp paid">À jour</span>`)
+              + (needsCaution ? `<div class="dim" style="font-size:11px;margin-top:3px;">⚠ Caution à traiter</div>` : '');
             return `<tr>
               <td class="name">${esc(t.nom)}</td>
               <td data-label="Bien">${esc(p ? p.nom : 'Bien supprimé')}</td>
               <td data-label="Téléphone">${esc(t.telephone || '—')}</td>
               <td class="num" data-label="Loyer">${fmtFCFA(t.loyerMensuel)}</td>
+              <td data-label="Fiabilité">${reliabilityBadge(reliabilityScore(t.id))}</td>
               <td data-label="Statut">${statusBadge}</td>
               <td class="actions">
                 ${isLate && t.telephone ? `<button class="btn-icon" data-action="whatsapp-reminder" data-id="${t.id}" title="Rappel WhatsApp">💬</button>` : ''}
+                <button class="btn-icon" data-action="gen-contract" data-id="${t.id}" title="Contrat de bail">📄</button>
+                <button class="btn-icon" data-action="share-portal" data-id="${t.id}" title="Lien du portail locataire">🔗</button>
                 <button class="btn-ghost" data-action="edit-tenant" data-id="${t.id}">Modifier</button>
                 <button class="btn-icon" data-action="delete-tenant" data-id="${t.id}" title="Supprimer">🗑</button>
               </td>
@@ -805,6 +906,23 @@ function renderLocataires(){
       </table>`}
     </div>`;
 }
+async function syncTenantPortal(tenantId, tenantData){
+  if (demoMode) return;
+  try {
+    const t = tenantId ? (cache.tenants.find(x => x.id === tenantId) || tenantData) : tenantData;
+    if (!t || !t.portalToken) return;
+    const p = cache.properties.find(x => x.id === t.propertyId);
+    const payments = tenantId ? cache.payments.filter(x => x.tenantId === tenantId)
+      .sort((a, b) => (a.datePaiement || '').localeCompare(b.datePaiement || ''))
+      .map(x => ({ mois: monthLabel(x.moisConcerne), montant: Number(x.montant || 0), date: x.datePaiement || '', methode: x.methode || '' })) : [];
+    await db.collection('tenantPortals').doc(t.portalToken).set({
+      landlordNom: landlordData?.nom || '', tenantNom: t.nom, propertyNom: p ? p.nom : '', propertyQuartier: p ? (p.quartier || '') : '',
+      loyerMensuel: Number(t.loyerMensuel || 0), caution: Number(t.caution || 0), dateEntree: t.dateEntree || '',
+      jourEcheance: t.jourEcheance || 5, statut: t.statut || 'actif', payments, lastUpdated: new Date().toISOString()
+    });
+  } catch (err) { console.warn('Synchronisation du portail locataire échouée', err); }
+}
+function genToken(){ return Array.from({ length: 4 }, () => Math.random().toString(36).slice(2, 8)).join(''); }
 function openTenantModal(existing){
   const isEdit = !!existing;
   if (cache.properties.length === 0) { toast('Ajoutez d\'abord un bien.', 'err'); return; }
@@ -820,22 +938,40 @@ function openTenantModal(existing){
     <label>Loyer mensuel (FCFA)<input name="loyerMensuel" type="number" min="0" value="${existing?.loyerMensuel ?? ''}" required></label>
     <label>Caution (FCFA)<input name="caution" type="number" min="0" value="${existing?.caution ?? ''}"></label>
     <label>Date d'entrée<input name="dateEntree" type="date" value="${existing?.dateEntree || ''}"></label>
+    <label>Durée du bail (mois)<input name="dureeBail" type="number" min="1" value="${existing?.dureeBail ?? 12}"></label>
+    <label>Jour d'échéance du loyer (1-31)<input name="jourEcheance" type="number" min="1" max="31" value="${existing?.jourEcheance ?? 5}"></label>
     <label>Statut
       <select name="statut">
         <option value="actif" ${existing?.statut === 'actif' ? 'selected' : ''}>Actif</option>
         <option value="parti" ${existing?.statut === 'parti' ? 'selected' : ''}>Parti</option>
       </select>
     </label>
+    <label>Statut de la caution
+      <select name="cautionStatut">
+        <option value="conservee" ${(!existing?.cautionStatut || existing?.cautionStatut === 'conservee') ? 'selected' : ''}>Conservée (locataire en place)</option>
+        <option value="a_traiter" ${existing?.cautionStatut === 'a_traiter' ? 'selected' : ''}>À traiter (départ récent)</option>
+        <option value="partiel" ${existing?.cautionStatut === 'partiel' ? 'selected' : ''}>Remboursée partiellement</option>
+        <option value="totale" ${existing?.cautionStatut === 'totale' ? 'selected' : ''}>Remboursée intégralement</option>
+        <option value="retenue" ${existing?.cautionStatut === 'retenue' ? 'selected' : ''}>Retenue (dommages/impayés)</option>
+      </select>
+    </label>
+    <label>Montant remboursé au locataire (FCFA)<input name="cautionRembourse" type="number" min="0" value="${existing?.cautionRembourse ?? 0}"></label>
+    <label>Note sur la caution (optionnel)<input name="cautionNote" value="${esc(existing?.cautionNote || '')}" placeholder="Ex : retenu pour peinture"></label>
   `, async fd => {
     const data = {
       nom: fd.get('nom').trim(), telephone: fd.get('telephone').trim(), propertyId: fd.get('propertyId'),
       loyerMensuel: Number(fd.get('loyerMensuel')), caution: Number(fd.get('caution') || 0),
-      dateEntree: fd.get('dateEntree'), statut: fd.get('statut')
+      dateEntree: fd.get('dateEntree'), dureeBail: Number(fd.get('dureeBail') || 12),
+      jourEcheance: Math.min(31, Math.max(1, Number(fd.get('jourEcheance') || 5))),
+      statut: fd.get('statut'), cautionStatut: fd.get('cautionStatut'),
+      cautionRembourse: Number(fd.get('cautionRembourse') || 0), cautionNote: fd.get('cautionNote').trim(),
+      portalToken: existing?.portalToken || genToken()
     };
     try {
       if (isEdit) await dbUpdate('tenants', existing.id, data);
       else await dbAdd('tenants', data);
       closeModal(); toast(isEdit ? 'Locataire mis à jour' : 'Locataire ajouté');
+      syncTenantPortal(isEdit ? existing.id : null, data);
     } catch (err) { toast('Erreur : ' + err.message, 'err'); }
   });
 }
@@ -847,14 +983,40 @@ function deleteTenant(id){
 /* ======================================================
    PAIEMENTS
    ====================================================== */
+function getUpcomingDueDates(){
+  const lateIds = getLateTenantIds();
+  const now = new Date();
+  return cache.tenants.filter(t => t.statut === 'actif').map(t => {
+    const day = Math.min(28, t.jourEcheance || 5);
+    const isLate = lateIds.has(t.id);
+    let due = isLate ? new Date(now.getFullYear(), now.getMonth(), day) : new Date(now.getFullYear(), now.getMonth() + 1, day);
+    const diffDays = Math.round((due - now) / 86400000);
+    return { tenant: t, due, diffDays, isLate };
+  }).sort((a, b) => a.due - b.due);
+}
 function renderPaiements(){
   const root = document.getElementById('view-root');
   const sorted = [...cache.payments].sort((a, b) => (b.datePaiement || '').localeCompare(a.datePaiement || ''));
+  const upcoming = getUpcomingDueDates();
+  const echeanceRow = u => `<div class="ledger-row">
+        <span>${esc(u.tenant.nom)}${u.isLate ? ' <span class="dim">(en retard)</span>' : ''}</span>
+        <span style="display:flex;align-items:center;gap:10px;">
+          <span class="dim">${u.isLate ? 'à régulariser' : u.due.toLocaleDateString('fr-FR')}</span>
+          ${u.tenant.telephone ? `<button class="btn-icon" data-action="whatsapp-reminder" data-id="${u.tenant.id}" title="Rappel WhatsApp">💬</button>` : ''}
+        </span>
+      </div>`;
+  const echeancierCard = upcoming.length === 0 ? '' : `<div class="card">
+      <h3>Prochaines échéances</h3>
+      ${upcoming.filter(u => u.isLate).map(echeanceRow).join('')}
+      ${upcoming.filter(u => !u.isLate && u.diffDays <= 7).map(echeanceRow).join('')}
+      ${upcoming.filter(u => !u.isLate && u.diffDays > 7).slice(0, 5).map(echeanceRow).join('')}
+    </div>`;
   root.innerHTML = `
     <div class="view-header">
       <button class="btn-primary" data-action="add-payment">+ Enregistrer un paiement</button>
       <button class="btn-ghost" data-action="export-payments">Exporter en Excel</button>
     </div>
+    ${echeancierCard}
     <div class="card">
       <h3>Historique des paiements</h3>
       ${sorted.length === 0 ? `<p class="empty">Aucun paiement enregistré pour l'instant.</p>` : `
@@ -909,13 +1071,14 @@ function openPaymentModal(){
     };
     const t = cache.tenants.find(x => x.id === data.tenantId);
     data.propertyId = t ? t.propertyId : null;
-    try { await dbAdd('payments', data); closeModal(); toast('Paiement enregistré'); }
+    try { await dbAdd('payments', data); closeModal(); toast('Paiement enregistré'); syncTenantPortal(data.tenantId); }
     catch (err) { toast('Erreur : ' + err.message, 'err'); }
   }, 'Enregistrer');
 }
 function deletePayment(id){
   if (!confirm('Supprimer ce paiement ?')) return;
-  dbDelete('payments', id).then(() => toast('Paiement supprimé')).catch(err => toast('Erreur : ' + err.message, 'err'));
+  const p = cache.payments.find(x => x.id === id);
+  dbDelete('payments', id).then(() => { toast('Paiement supprimé'); if (p) syncTenantPortal(p.tenantId); }).catch(err => toast('Erreur : ' + err.message, 'err'));
 }
 function buildPaymentsSheet(){
   const rows = [...cache.payments].sort((a, b) => (a.datePaiement || '').localeCompare(b.datePaiement || '')).map(p => {
@@ -940,10 +1103,13 @@ function buildTenantsSheet(){
   return XLSX.utils.json_to_sheet(rows);
 }
 function buildPropertiesSheet(){
-  const rows = cache.properties.map(p => ({
-    'Bien': p.nom, 'Quartier': p.quartier || '—', 'Type': p.type || '—',
-    'Loyer mensuel (FCFA)': Number(p.loyerMensuel || 0), 'Statut': p.statut === 'occupe' ? 'Occupé' : 'Vacant'
-  }));
+  const rows = cache.properties.map(p => {
+    const b = cache.buildings.find(x => x.id === p.buildingId);
+    return {
+      'Bien': p.nom, 'Immeuble': b ? b.nom : '—', 'Quartier': p.quartier || '—', 'Type': p.type || '—',
+      'Loyer mensuel (FCFA)': Number(p.loyerMensuel || 0), 'Statut': p.statut === 'occupe' ? 'Occupé' : 'Vacant'
+    };
+  });
   return XLSX.utils.json_to_sheet(rows);
 }
 function buildMaintenanceSheet(){
@@ -954,6 +1120,13 @@ function buildMaintenanceSheet(){
       'Statut': m.statut === 'ouvert' ? 'Ouvert' : (m.statut === 'en_cours' ? 'En cours' : 'Résolu'),
       'Coût estimé (FCFA)': Number(m.coutEstime || 0), 'Date de création': m.dateCreation || '—'
     };
+  });
+  return XLSX.utils.json_to_sheet(rows);
+}
+function buildExpensesSheet(){
+  const rows = [...cache.expenses].sort((a, b) => (a.date || '').localeCompare(b.date || '')).map(d => {
+    const p = cache.properties.find(x => x.id === d.propertyId);
+    return { 'Description': d.description || d.categorie, 'Bien': p ? p.nom : 'Général', 'Catégorie': d.categorie, 'Montant (FCFA)': Number(d.montant || 0), 'Date': d.date || '—' };
   });
   return XLSX.utils.json_to_sheet(rows);
 }
@@ -985,6 +1158,7 @@ function exportFullReportExcel(){
   const wsT = buildTenantsSheet(); autoWidth(wsT); XLSX.utils.book_append_sheet(wb, wsT, 'Locataires');
   const wsB = buildPropertiesSheet(); autoWidth(wsB); XLSX.utils.book_append_sheet(wb, wsB, 'Biens');
   const wsM = buildMaintenanceSheet(); autoWidth(wsM); XLSX.utils.book_append_sheet(wb, wsM, 'Maintenance');
+  const wsD = buildExpensesSheet(); autoWidth(wsD); XLSX.utils.book_append_sheet(wb, wsD, 'Dépenses');
   XLSX.writeFile(wb, `rapport_loyerpro_${new Date().toISOString().slice(0, 10)}.xlsx`);
 }
 function triggerImport(kind){
@@ -1116,6 +1290,76 @@ async function generateReceipt(paymentId){
   }
   doc.save(fileName);
 }
+async function generateContract(tenantId){
+  const t = cache.tenants.find(x => x.id === tenantId);
+  if (!t) { toast('Locataire introuvable', 'err'); return; }
+  const p = cache.properties.find(x => x.id === t.propertyId);
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const W = doc.internal.pageSize.getWidth();
+  const H = doc.internal.pageSize.getHeight();
+  const marginX = 18;
+  const maxWidth = W - marginX * 2;
+  let y = 20;
+  const ensureSpace = needed => { if (y + needed > H - 20) { doc.addPage(); y = 20; } };
+  const addArticle = (heading, body) => {
+    ensureSpace(10);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+    doc.text(heading, marginX, y); y += 6;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+    doc.splitTextToSize(body, maxWidth).forEach(line => { ensureSpace(6); doc.text(line, marginX, y); y += 5.5; });
+    y += 4;
+  };
+
+  const bailleur = landlordData?.nom || currentUser.email;
+  const bailleurContact = [landlordData?.telephone, landlordData?.email || currentUser.email].filter(Boolean).join(' — ');
+  const bienNom = p ? p.nom : '—';
+  const bienAdresse = p ? [p.adresse, p.quartier].filter(Boolean).join(', ') : '—';
+  const dateEntree = t.dateEntree || '—';
+  const duree = t.dureeBail || 12;
+  let dateFin = '—';
+  if (t.dateEntree) { const d = new Date(t.dateEntree); d.setMonth(d.getMonth() + duree); dateFin = d.toISOString().slice(0, 10); }
+  const jourEcheance = t.jourEcheance || 5;
+
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(15);
+  doc.text("CONTRAT DE BAIL D'HABITATION", W / 2, y, { align: 'center' }); y += 7;
+  doc.setFont('helvetica', 'italic'); doc.setFontSize(8); doc.setTextColor(140);
+  doc.splitTextToSize("Modèle indicatif généré via Loyer Pro — ne remplace pas un contrat rédigé ou validé par un professionnel du droit.", maxWidth).forEach(line => { doc.text(line, W / 2, y, { align: 'center' }); y += 4; });
+  doc.setTextColor(0); y += 6;
+
+  addArticle('Entre les soussignés :', `Le Bailleur : ${bailleur} (${bailleurContact}), ci-après désigné « le Bailleur », et le Locataire : ${t.nom} (${t.telephone || '—'}), ci-après désigné « le Locataire », il a été convenu ce qui suit :`);
+  addArticle('Article 1 — Désignation du bien loué', `Le Bailleur donne à bail au Locataire, qui accepte, le bien suivant : ${bienNom}, de type ${p ? p.type : '—'}, situé à ${bienAdresse}.`);
+  addArticle('Article 2 — Durée du bail', `Le présent bail est conclu pour une durée de ${duree} mois, prenant effet le ${dateEntree} et se terminant le ${dateFin}, sauf reconduction ou résiliation anticipée.`);
+  addArticle('Article 3 — Loyer et modalités de paiement', `Le loyer mensuel est fixé à ${fmtFCFA(t.loyerMensuel)}, payable d'avance le ${jourEcheance} de chaque mois.`);
+  addArticle('Article 4 — Dépôt de garantie', `Un dépôt de garantie de ${fmtFCFA(t.caution || 0)} est versé par le Locataire à la signature. Il sera restitué en fin de bail, déduction faite des sommes dues ou réparations locatives à la charge du Locataire.`);
+  addArticle('Article 5 — Obligations du Locataire', "Le Locataire s'engage à payer le loyer aux échéances convenues, à user paisiblement du logement, à l'entretenir en bon état, et à ne pas le transformer sans accord écrit du Bailleur.");
+  addArticle('Article 6 — Obligations du Bailleur', "Le Bailleur s'engage à délivrer un logement décent et en bon état d'usage, et à assurer au Locataire une jouissance paisible des lieux.");
+  addArticle('Article 7 — Résiliation', "Le présent bail peut être résilié par chacune des parties moyennant un préavis d'un (1) mois notifié par écrit, sauf manquement grave.");
+  addArticle('Article 8 — Litiges', "Tout litige relatif à l'exécution du présent contrat sera réglé à l'amiable ou, à défaut, porté devant les juridictions compétentes de Côte d'Ivoire.");
+
+  ensureSpace(35); y += 8;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+  doc.text('Fait à _______________, le ' + new Date().toLocaleDateString('fr-FR'), marginX, y);
+  y += 20;
+  doc.text('Le Bailleur', marginX, y);
+  doc.text('Le Locataire', W - marginX, y, { align: 'right' });
+  y += 5;
+  doc.text('(Signature)', marginX, y);
+  doc.text('(Signature)', W - marginX, y, { align: 'right' });
+
+  const fileName = `contrat_bail_${(t.nom || 'locataire').replace(/\s+/g, '_')}.pdf`;
+  try {
+    const pdfBlob = doc.output('blob');
+    const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: 'Contrat de bail', text: `Contrat de bail — ${t.nom}` });
+      return;
+    }
+  } catch (err) {
+    if (err?.name === 'AbortError') return;
+  }
+  doc.save(fileName);
+}
 
 /* ======================================================
    MAINTENANCE
@@ -1183,6 +1427,74 @@ function openMaintenanceModal(){
 function deleteMaintenance(id){
   if (!confirm('Supprimer ce ticket ?')) return;
   dbDelete('maintenance', id).then(() => toast('Ticket supprimé')).catch(err => toast('Erreur : ' + err.message, 'err'));
+}
+
+/* ======================================================
+   DÉPENSES
+   ====================================================== */
+function renderDepenses(){
+  const root = document.getElementById('view-root');
+  const now = new Date();
+  const curKey = monthKey(now);
+  const totalMois = cache.expenses.filter(d => (d.date || '').slice(0, 7) === curKey).reduce((s, d) => s + Number(d.montant || 0), 0);
+  const totalTout = cache.expenses.reduce((s, d) => s + Number(d.montant || 0), 0);
+  const revenuMois = cache.payments.filter(p => p.moisConcerne === curKey).reduce((s, p) => s + Number(p.montant || 0), 0);
+  const netMois = revenuMois - totalMois;
+  root.innerHTML = `
+    <div class="view-header"><button class="btn-primary" data-action="add-expense">+ Ajouter une dépense</button></div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-label">Dépenses ce mois</div><div class="stat-value">${fmtFCFA(totalMois)}</div></div>
+      <div class="stat-card ${netMois < 0 ? 'late' : ''}"><div class="stat-label">Bénéfice net (ce mois)</div><div class="stat-value ${netMois < 0 ? 'late' : ''}">${fmtFCFA(netMois)}</div><div class="stat-sub">${fmtFCFA(revenuMois)} loyers − ${fmtFCFA(totalMois)} dépenses</div></div>
+      <div class="stat-card"><div class="stat-label">Total dépenses (tout)</div><div class="stat-value">${fmtFCFA(totalTout)}</div></div>
+    </div>
+    <div class="card">
+      ${cache.expenses.length === 0 ? `<p class="empty">Aucune dépense enregistrée.</p>` : `
+      <table class="data-table">
+        <thead><tr><th>Description</th><th>Bien</th><th>Catégorie</th><th class="num">Montant</th><th>Date</th><th></th></tr></thead>
+        <tbody>
+          ${[...cache.expenses].sort((a, b) => (b.date || '').localeCompare(a.date || '')).map(d => {
+            const p = cache.properties.find(x => x.id === d.propertyId);
+            return `<tr>
+              <td class="name">${esc(d.description || d.categorie)}</td>
+              <td data-label="Bien">${esc(p ? p.nom : '—')}</td>
+              <td data-label="Catégorie">${esc(d.categorie)}</td>
+              <td class="num" data-label="Montant">${fmtFCFA(d.montant)}</td>
+              <td data-label="Date">${d.date || '—'}</td>
+              <td class="actions"><button class="btn-icon" data-action="delete-expense" data-id="${d.id}" title="Supprimer">🗑</button></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`}
+    </div>`;
+}
+function openExpenseModal(){
+  openModal('Ajouter une dépense', `
+    <label>Bien concerné (optionnel)
+      <select name="propertyId">
+        <option value="">— Dépense générale —</option>
+        ${cache.properties.map(p => `<option value="${p.id}">${esc(p.nom)}</option>`).join('')}
+      </select>
+    </label>
+    <label>Catégorie
+      <select name="categorie">
+        <option>Réparation</option><option>Taxe / Impôt</option><option>Assurance</option><option>Entretien</option><option>Autre</option>
+      </select>
+    </label>
+    <label>Description<input name="description" placeholder="Ex : Réparation plomberie"></label>
+    <label>Montant (FCFA)<input name="montant" type="number" min="0" required></label>
+    <label>Date<input name="date" type="date" value="${new Date().toISOString().slice(0, 10)}" required></label>
+  `, async fd => {
+    const data = {
+      propertyId: fd.get('propertyId') || '', categorie: fd.get('categorie'), description: fd.get('description').trim(),
+      montant: Number(fd.get('montant')), date: fd.get('date')
+    };
+    try { await dbAdd('expenses', data); closeModal(); toast('Dépense ajoutée'); }
+    catch (err) { toast('Erreur : ' + err.message, 'err'); }
+  }, 'Ajouter');
+}
+function deleteExpense(id){
+  if (!confirm('Supprimer cette dépense ?')) return;
+  dbDelete('expenses', id).then(() => toast('Dépense supprimée')).catch(err => toast('Erreur : ' + err.message, 'err'));
 }
 
 /* ======================================================
@@ -1370,6 +1682,56 @@ const PLANS = {
   pro: { nom: 'Pro', prix: 7000, biens: 'Biens illimités', features: ['Tout Essentiel', 'Biens illimités', 'Rapports avancés', 'Support prioritaire'], waveLink: 'https://pay.wave.com/m/M_ci_OaBqxSO_TLoN/c/ci/?amount=7000' }
 };
 
+function genReferralCode(){ return Math.random().toString(36).slice(2, 9).toUpperCase(); }
+async function ensureReferralCode(){
+  if (demoMode || !currentUser) return null;
+  if (landlordData.referralCode) return landlordData.referralCode;
+  const code = genReferralCode();
+  try {
+    await db.collection('referralCodes').doc(code).set({ landlordUid: currentUser.uid });
+    await db.collection('landlords').doc(currentUser.uid).update({ referralCode: code });
+    landlordData.referralCode = code;
+    return code;
+  } catch (err) { return null; }
+}
+async function getReferralCount(){
+  if (demoMode || !currentUser) return 0;
+  try {
+    const snap = await db.collection('referralEvents').where('referrerUid', '==', currentUser.uid).get();
+    return snap.size;
+  } catch (err) { return 0; }
+}
+async function checkReferralRewards(){
+  if (demoMode || !currentUser) return;
+  const count = await getReferralCount();
+  const granted = landlordData.referralRewardsGranted || 0;
+  const newRewards = Math.floor(count / 10) - granted;
+  if (newRewards > 0) {
+    const base = (landlordData.abonnementExpire && new Date(landlordData.abonnementExpire) > new Date()) ? new Date(landlordData.abonnementExpire) : new Date();
+    base.setDate(base.getDate() + 30 * newRewards);
+    const updates = { abonnementStatut: 'actif', abonnementExpire: base.toISOString().slice(0, 10), referralRewardsGranted: granted + newRewards };
+    if (!landlordData.plan) updates.plan = 'pro';
+    try {
+      await db.collection('landlords').doc(currentUser.uid).update(updates);
+      Object.assign(landlordData, updates);
+      toast(`🎉 Parrainage : ${newRewards} mois gratuit${newRewards > 1 ? 's' : ''} débloqué${newRewards > 1 ? 's' : ''} !`);
+      router();
+    } catch (err) { /* silencieux */ }
+  }
+}
+async function shareReferral(){
+  if (demoMode) { toast('Le parrainage n\'est pas disponible en mode démo.'); return; }
+  const code = await ensureReferralCode();
+  if (!code) { toast('Impossible de générer ton lien pour le moment.', 'err'); return; }
+  const url = `${location.origin}${location.pathname}?ref=${code}`;
+  const text = `Salut ! Je gère mes loyers avec Loyer Pro, une appli simple pour propriétaires en Côte d'Ivoire. Essaie-la avec mon lien : `;
+  if (navigator.share) {
+    navigator.share({ title: 'Loyer Pro', text, url }).catch(() => {});
+  } else {
+    window.open(`https://wa.me/?text=${encodeURIComponent(text + url)}`, '_blank');
+  }
+}
+
 function renderAbonnement(){
   const root = document.getElementById('view-root');
   const plan = landlordData?.plan;
@@ -1402,7 +1764,24 @@ function renderAbonnement(){
           <ul class="plan-features">${pl.features.map(f => `<li>${esc(f)}</li>`).join('')}</ul>
           <button class="btn-primary" data-action="request-plan" data-id="${key}">Choisir ce plan</button>
         </div>`).join('')}
+    </div>
+
+    <div class="card">
+      <h3>🎁 Programme de parrainage</h3>
+      <p class="dim">Invite d'autres propriétaires à rejoindre Loyer Pro. Pour chaque groupe de <strong>10 inscriptions</strong> via ton lien, tu débloques <strong>1 mois gratuit</strong> (plan Pro).</p>
+      <div class="row-actions">
+        <button class="btn-primary" data-action="share-referral">Partager mon lien de parrainage</button>
+      </div>
+      <p id="referral-progress" class="dim" style="margin-top:10px;">Chargement...</p>
     </div>`;
+
+  (async () => {
+    const count = await getReferralCount();
+    const granted = landlordData.referralRewardsGranted || 0;
+    const remaining = 10 - (count % 10);
+    const el = document.getElementById('referral-progress');
+    if (el) el.textContent = `${count} inscription${count !== 1 ? 's' : ''} via ton lien${granted > 0 ? ` · ${granted} mois gratuit${granted > 1 ? 's' : ''} déjà débloqué${granted > 1 ? 's' : ''}` : ''} · encore ${remaining} pour le prochain mois gratuit.`;
+  })();
 }
 
 function openPlanRequestModal(planKey){
@@ -1550,8 +1929,8 @@ async function sendAssistantMessage(){
 /* ======================================================
    ROUTAGE
    ====================================================== */
-const routeTitles = { dashboard: 'Tableau de bord', biens: 'Biens', locataires: 'Locataires', paiements: 'Paiements', maintenance: 'Maintenance', rapports: 'Rapports', abonnement: 'Abonnement', assistant: 'Assistant IA' };
-const routes = { dashboard: renderDashboard, biens: renderBiens, locataires: renderLocataires, paiements: renderPaiements, maintenance: renderMaintenance, rapports: renderRapports, abonnement: renderAbonnement, assistant: renderAssistant };
+const routeTitles = { dashboard: 'Tableau de bord', biens: 'Biens', locataires: 'Locataires', paiements: 'Paiements', maintenance: 'Maintenance', depenses: 'Dépenses', rapports: 'Rapports', abonnement: 'Abonnement', assistant: 'Assistant IA' };
+const routes = { dashboard: renderDashboard, biens: renderBiens, locataires: renderLocataires, paiements: renderPaiements, maintenance: renderMaintenance, depenses: renderDepenses, rapports: renderRapports, abonnement: renderAbonnement, assistant: renderAssistant };
 
 function router(){
   if (!currentUser) return;
@@ -1568,7 +1947,7 @@ function showTrialBlockedModal(){
   `, () => { closeModal(); location.hash = '#/abonnement'; }, 'Voir les plans');
 }
 
-const GATED_ACTIONS = new Set(['add-property', 'add-tenant', 'add-payment', 'add-maintenance', 'send-assistant', 'import-properties', 'import-tenants']);
+const GATED_ACTIONS = new Set(['add-property', 'add-tenant', 'add-payment', 'add-maintenance', 'send-assistant', 'import-properties', 'import-tenants', 'add-building', 'add-unit', 'add-expense']);
 
 function onViewClick(e){
   const btn = e.target.closest('[data-action]');
@@ -1584,6 +1963,17 @@ function onViewClick(e){
       }
       openPropertyModal();
     },
+    'add-unit': () => {
+      const limit = propertyLimit();
+      if (cache.properties.length >= limit) {
+        openModal('Limite de biens atteinte', `<p class="dim">Ton plan actuel (${planLabel()}) autorise jusqu'à ${limit} biens. Passe au plan Pro pour un nombre illimité de biens.</p>`, () => { closeModal(); location.hash = '#/abonnement'; }, 'Voir les plans');
+        return;
+      }
+      openPropertyModal(null, id);
+    },
+    'add-building': () => openBuildingModal(),
+    'edit-building': () => openBuildingModal(cache.buildings.find(b => b.id === id)),
+    'delete-building': () => deleteBuilding(id),
     'edit-property': () => openPropertyModal(cache.properties.find(p => p.id === id)),
     'delete-property': () => deleteProperty(id),
     'add-tenant': () => openTenantModal(),
@@ -1592,14 +1982,19 @@ function onViewClick(e){
     'add-payment': () => openPaymentModal(),
     'delete-payment': () => deletePayment(id),
     'download-receipt': () => generateReceipt(id),
+    'gen-contract': () => generateContract(id),
+    'share-portal': () => shareTenantPortal(id),
     'export-payments': () => exportPaymentsExcel(),
     'export-full-report': () => exportFullReportExcel(),
     'add-maintenance': () => openMaintenanceModal(),
     'delete-maintenance': () => deleteMaintenance(id),
+    'add-expense': () => openExpenseModal(),
+    'delete-expense': () => deleteExpense(id),
     'send-assistant': () => sendAssistantMessage(),
     'request-plan': () => openPlanRequestModal(id),
     'whatsapp-reminder': () => sendWhatsAppReminder(id),
     'share-summary': () => shareMonthlySummary(),
+    'share-referral': () => shareReferral(),
     'import-properties': () => triggerImport('properties'),
     'import-tenants': () => triggerImport('tenants'),
   };
@@ -1610,6 +2005,11 @@ function onViewClick(e){
    AUTHENTIFICATION & LISTENERS TEMPS RÉEL
    ====================================================== */
 function attachListeners(){
+  unsubscribers.push(col('buildings').onSnapshot(snap => {
+    cache.buildings = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.nom || '').localeCompare(b.nom || ''));
+    router();
+  }, err => toast('Erreur de synchronisation : ' + err.message, 'err')));
+
   unsubscribers.push(col('properties').onSnapshot(snap => {
     cache.properties = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.nom || '').localeCompare(b.nom || ''));
     router();
@@ -1629,11 +2029,16 @@ function attachListeners(){
     cache.maintenance = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     router();
   }, err => toast('Erreur de synchronisation : ' + err.message, 'err')));
+
+  unsubscribers.push(col('expenses').onSnapshot(snap => {
+    cache.expenses = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    router();
+  }, err => toast('Erreur de synchronisation : ' + err.message, 'err')));
 }
 function detachListeners(){
   unsubscribers.forEach(u => u());
   unsubscribers = [];
-  cache = { properties: [], tenants: [], payments: [], maintenance: [] };
+  cache = { properties: [], tenants: [], payments: [], maintenance: [], buildings: [], expenses: [] };
   assistantMessages = [];
 }
 
@@ -1723,6 +2128,8 @@ if (auth) {
     attachListeners();
     router();
     maybeShowTrialReminder();
+    ensureReferralCode();
+    checkReferralRewards();
   } else {
     currentUser = null;
     detachListeners();
@@ -1782,6 +2189,19 @@ document.getElementById('signup-form').addEventListener('submit', async e => {
       nom: name, email, telephone: phone, createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       plan: null, abonnementStatut: 'essai', abonnementExpire: trialEnd.toISOString().slice(0, 10), isAdmin: isOwnerAccount
     });
+    const refCode = new URLSearchParams(location.search).get('ref');
+    if (refCode) {
+      try {
+        const codeDoc = await db.collection('referralCodes').doc(refCode).get();
+        if (codeDoc.exists) {
+          const referrerUid = codeDoc.data().landlordUid;
+          if (referrerUid && referrerUid !== cred.user.uid) {
+            await db.collection('landlords').doc(cred.user.uid).update({ referredBy: referrerUid });
+            await db.collection('referralEvents').add({ referrerUid, newUid: cred.user.uid, newLandlordNom: name, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+          }
+        }
+      } catch (err) { /* parrainage non-bloquant */ }
+    }
   } catch (err) { errEl.textContent = translateAuthError(err); }
 });
 

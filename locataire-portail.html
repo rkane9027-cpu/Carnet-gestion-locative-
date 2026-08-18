@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#F4F6F9">
+<meta name="robots" content="noindex, nofollow">
+<title>Espace locataire — Loyer Pro</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230E4C86'/%3E%3Ctext x='32' y='45' font-family='Arial,sans-serif' font-weight='700' font-size='36' fill='white' text-anchor='middle'%3EL%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F4F6F9; --surface:#FFFFFF; --surface-2:#EEF2F6; --text:#1B2531; --text-dim:#63707C;
+  --border:#DEE4EA; --primary:#0E4C86; --primary-dark:#0A3A68; --primary-soft:#E7F0F9;
+  --success:#1E8E5F; --success-soft:#E5F5ED; --danger:#C0392B; --danger-soft:#FBEAE8;
+  --warn:#B07A1E; --warn-soft:#FAF1E1; --shadow:0 1px 2px rgba(20,27,36,.05), 0 6px 16px rgba(20,27,36,.05);
+}
+*{ box-sizing:border-box; }
+body{ margin:0; font-family:'IBM Plex Sans',sans-serif; background:var(--bg); color:var(--text); }
+.wrap{ max-width:640px; margin:0 auto; padding:20px 16px 60px; }
+.brand{ display:flex; align-items:center; gap:10px; margin-bottom:22px; }
+.brand-mark{ width:34px; height:34px; border-radius:9px; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-family:'IBM Plex Mono',monospace; }
+.brand-text h1{ font-size:16px; margin:0; }
+.brand-text span{ font-size:12px; color:var(--text-dim); }
+.card{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:20px; box-shadow:var(--shadow); margin-bottom:16px; }
+.card h2{ font-size:15px; margin:0 0 4px; }
+.card .dim{ color:var(--text-dim); font-size:13px; }
+.info-row{ display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--border); font-size:14px; }
+.info-row:last-child{ border-bottom:none; }
+.info-row span:first-child{ color:var(--text-dim); }
+.info-row span:last-child{ font-weight:600; }
+.badge{ display:inline-block; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:600; }
+.badge.actif{ color:var(--success); background:var(--success-soft); }
+.badge.parti{ color:var(--text-dim); background:var(--surface-2); }
+table{ width:100%; border-collapse:collapse; font-size:13px; }
+th{ text-align:left; padding:8px 6px; color:var(--text-dim); font-weight:600; border-bottom:1px solid var(--border); font-size:12px; }
+td{ padding:9px 6px; border-bottom:1px solid var(--border); }
+td.num{ text-align:right; font-family:'IBM Plex Mono',monospace; }
+.empty{ color:var(--text-dim); font-size:13px; padding:14px 0; text-align:center; }
+.footer-note{ text-align:center; color:var(--text-dim); font-size:11px; margin-top:20px; line-height:1.6; }
+.state-box{ text-align:center; padding:60px 20px; color:var(--text-dim); }
+</style>
+</head>
+<body>
+<div class="wrap" id="root">
+  <div class="brand"><div class="brand-mark">L</div><div class="brand-text"><h1>Loyer Pro</h1><span>Espace locataire</span></div></div>
+  <div class="state-box" id="loading">Chargement de tes informations...</div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script>
+function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmtFCFA(n){ return `${Number(n || 0).toLocaleString('fr-FR')} FCFA`; }
+function showState(html){ document.getElementById('root').innerHTML = `<div class="brand"><div class="brand-mark">L</div><div class="brand-text"><h1>Loyer Pro</h1><span>Espace locataire</span></div></div>${html}`; }
+
+window.addEventListener('error', () => showState(`<div class="state-box">Une erreur est survenue lors du chargement. Vérifie ta connexion et recharge la page.</div>`));
+window.addEventListener('unhandledrejection', () => showState(`<div class="state-box">Une erreur est survenue lors du chargement. Vérifie ta connexion et recharge la page.</div>`));
+setTimeout(() => {
+  if (document.getElementById('loading')) showState(`<div class="state-box">Le chargement prend trop de temps. Vérifie ta connexion et recharge la page.</div>`);
+}, 8000);
+
+const token = new URLSearchParams(location.search).get('token');
+if (!token) {
+  showState(`<div class="state-box">Lien invalide — aucun code d'accès trouvé.</div>`);
+} else if (typeof firebase === 'undefined') {
+  showState(`<div class="state-box">Le service n'a pas pu se charger. Vérifie ta connexion internet et recharge la page.</div>`);
+} else {
+  firebase.initializeApp({
+    apiKey: "AIzaSyBI5J1jtVdRa_2ZP_s3vao-QulBMpLWVmk",
+    authDomain: "hoopci.firebaseapp.com",
+    projectId: "hoopci",
+    storageBucket: "hoopci.firebasestorage.app",
+    messagingSenderId: "200813723178",
+    appId: "1:200813723178:web:91ab9102cf45fb11e94d53"
+  });
+  const db = firebase.firestore();
+  db.collection('tenantPortals').doc(token).get().then(doc => {
+    if (!doc.exists) { showState(`<div class="state-box">Lien invalide ou expiré. Contacte ton bailleur pour un nouveau lien.</div>`); return; }
+    const d = doc.data();
+    const payments = (d.payments || []).slice().reverse();
+    const statutBadge = d.statut === 'actif' ? `<span class="badge actif">Actif</span>` : `<span class="badge parti">Parti</span>`;
+    showState(`
+      <div class="card">
+        <h2>Bonjour ${esc(d.tenantNom)} 👋</h2>
+        <p class="dim">${esc(d.propertyNom || '—')}${d.propertyQuartier ? ' · ' + esc(d.propertyQuartier) : ''}</p>
+        <div style="margin-top:10px;">
+          <div class="info-row"><span>Loyer mensuel</span><span>${fmtFCFA(d.loyerMensuel)}</span></div>
+          <div class="info-row"><span>Dépôt de garantie</span><span>${fmtFCFA(d.caution)}</span></div>
+          <div class="info-row"><span>Jour d'échéance</span><span>Le ${d.jourEcheance || 5} de chaque mois</span></div>
+          <div class="info-row"><span>Statut</span><span>${statutBadge}</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Historique des paiements</h2>
+        ${payments.length === 0 ? `<p class="empty">Aucun paiement enregistré pour l'instant.</p>` : `
+        <table>
+          <thead><tr><th>Mois</th><th>Méthode</th><th class="num">Montant</th></tr></thead>
+          <tbody>${payments.map(p => `<tr><td>${esc(p.mois)}</td><td>${esc(p.methode || '—')}</td><td class="num">${fmtFCFA(p.montant)}</td></tr>`).join('')}</tbody>
+        </table>`}
+      </div>
+      <p class="footer-note">Cet espace est fourni par ${esc(d.landlordNom || 'ton bailleur')} via Loyer Pro.<br>Dernière mise à jour : ${d.lastUpdated ? new Date(d.lastUpdated).toLocaleDateString('fr-FR') : '—'}. Page en lecture seule.</p>
+    `);
+  }).catch(() => {
+    showState(`<div class="state-box">Impossible de charger tes informations pour le moment. Réessaie dans un instant.</div>`);
+  });
+}
+</script>
+</body>
+</html>
