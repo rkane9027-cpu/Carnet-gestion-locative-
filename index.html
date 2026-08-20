@@ -600,5 +600,24 @@ window.__carnetMounted = true;
   }
 })();
 </script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script>
+(function(){
+  try {
+    firebase.initializeApp({
+      apiKey: "AIzaSyBI5J1jtVdRa_2ZP_s3vao-QulBMpLWVmk",
+      authDomain: "hoopci.firebaseapp.com",
+      projectId: "hoopci",
+      storageBucket: "hoopci.firebasestorage.app",
+      messagingSenderId: "200813723178",
+      appId: "1:200813723178:web:91ab9102cf45fb11e94d53"
+    });
+    firebase.firestore().collection('siteStats').doc('counter')
+      .set({ visits: firebase.firestore.FieldValue.increment(1) }, { merge: true })
+      .catch(function(){});
+  } catch (e) { /* ne bloque jamais l'affichage du site */ }
+})();
+</script>
 </body>
 </html>

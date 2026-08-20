@@ -368,6 +368,7 @@ input:focus, select:focus, textarea:focus{ outline:2px solid var(--primary); out
           <button type="button" class="theme-opt active" data-theme-choice="light">Clair</button>
           <button type="button" class="theme-opt" data-theme-choice="dark">Sombre</button>
         </div>
+        <button type="button" class="btn-icon" id="search-btn" title="Recherche" style="font-size:16px;border:1px solid var(--border);border-radius:50%;width:32px;height:32px;">🔍</button>
         <button type="button" class="btn-icon" id="support-btn" title="Aide / Support" style="font-size:18px;border:1px solid var(--border);border-radius:50%;width:32px;height:32px;">?</button>
         <div class="topbar-date" id="topbar-date"></div>
       </div>
@@ -535,8 +536,25 @@ function sendWhatsAppReminder(tenantId){
   if (!link) { toast('Numéro de téléphone invalide.', 'err'); return; }
   window.open(link, '_blank');
 }
+function getUpcomingLeaseEnds(){
+  const now = new Date();
+  return cache.tenants.filter(t => t.statut === 'actif' && t.dateEntree && t.dureeBail).map(t => {
+    const end = new Date(t.dateEntree);
+    end.setMonth(end.getMonth() + Number(t.dureeBail));
+    const days = Math.round((end - now) / 86400000);
+    return { tenant: t, end, days };
+  }).filter(x => x.days >= 0 && x.days <= 30).sort((a, b) => a.days - b.days);
+}
+function sendLeaseEndReminder(tenantId){
+  const t = cache.tenants.find(x => x.id === tenantId);
+  if (!t) { toast('Locataire introuvable', 'err'); return; }
+  if (!t.telephone) { toast('Aucun numéro de téléphone pour ce locataire.', 'err'); return; }
+  const message = `Bonjour ${t.nom}, ton bail arrive bientôt à échéance. Contacte-moi pour qu'on discute d'un renouvellement ou de ton départ. Merci !`;
+  const link = waLinkFor(t.telephone, message);
+  if (!link) { toast('Numéro de téléphone invalide.', 'err'); return; }
+  window.open(link, '_blank');
+}
 function monthLabel(k){
-  const parts = String(k||'').split('-');
   const noms = ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Août','Sep','Oct','Nov','Déc'];
   const m = Number(parts[1]);
   return m ? `${noms[m-1]} ${parts[0]}` : (k || '—');
@@ -687,6 +705,63 @@ function openModal(title, bodyHTML, onSubmit, submitLabel){
 }
 function closeModal(){ document.getElementById('modal-root').innerHTML = ''; }
 
+function openSearchModal(){
+  const root = document.getElementById('modal-root');
+  root.innerHTML = `
+    <div class="modal-overlay" id="modal-overlay">
+      <div class="modal-card">
+        <div class="modal-header"><h3>Recherche</h3><button type="button" class="modal-close" id="modal-close">&times;</button></div>
+        <input type="text" id="global-search-input" placeholder="Locataire, bien, paiement, ticket..." style="width:100%;padding:11px 12px;border:1px solid var(--border);border-radius:8px;font-size:15px;margin-bottom:12px;background:var(--surface);color:var(--text);">
+        <div id="global-search-results"></div>
+      </div>
+    </div>`;
+  document.getElementById('modal-close').addEventListener('click', closeModal);
+  document.getElementById('modal-overlay').addEventListener('click', e => { if (e.target.id === 'modal-overlay') closeModal(); });
+  const input = document.getElementById('global-search-input');
+  input.addEventListener('input', () => renderSearchResults(input.value));
+  renderSearchResults('');
+  setTimeout(() => input.focus(), 50);
+}
+function renderSearchResults(query){
+  const el = document.getElementById('global-search-results');
+  if (!el) return;
+  const q = query.trim().toLowerCase();
+  if (!q) { el.innerHTML = `<p class="dim" style="padding:6px 0;">Tape pour chercher parmi tes biens, locataires, paiements et tickets.</p>`; return; }
+  const results = [];
+  cache.tenants.forEach(t => {
+    if ((t.nom || '').toLowerCase().includes(q) || (t.telephone || '').includes(q)) {
+      const p = cache.properties.find(x => x.id === t.propertyId);
+      results.push({ icon: '👤', label: t.nom, sub: p ? p.nom : 'Locataire', route: 'locataires' });
+    }
+  });
+  cache.properties.forEach(p => {
+    if ((p.nom || '').toLowerCase().includes(q) || (p.quartier || '').toLowerCase().includes(q)) {
+      results.push({ icon: '🏠', label: p.nom, sub: p.quartier || 'Bien', route: 'biens' });
+    }
+  });
+  cache.payments.forEach(pay => {
+    const t = cache.tenants.find(x => x.id === pay.tenantId);
+    if (t && (t.nom || '').toLowerCase().includes(q)) {
+      results.push({ icon: '💳', label: `${t.nom} — ${monthLabel(pay.moisConcerne)}`, sub: fmtFCFA(pay.montant), route: 'paiements' });
+    }
+  });
+  cache.maintenance.forEach(m => {
+    if ((m.titre || '').toLowerCase().includes(q)) {
+      results.push({ icon: '🛠️', label: m.titre, sub: 'Maintenance', route: 'maintenance' });
+    }
+  });
+  if (results.length === 0) { el.innerHTML = `<p class="dim" style="padding:6px 0;">Aucun résultat.</p>`; return; }
+  el.innerHTML = results.slice(0, 20).map((r, i) => `
+    <div class="ledger-row" style="cursor:pointer;" data-goto-idx="${i}">
+      <span>${r.icon} ${esc(r.label)}</span>
+      <span class="dim">${esc(r.sub)}</span>
+    </div>`).join('');
+  el.querySelectorAll('[data-goto-idx]').forEach(row => {
+    const r = results[Number(row.getAttribute('data-goto-idx'))];
+    row.addEventListener('click', () => { location.hash = '#/' + r.route; closeModal(); });
+  });
+}
+
 /* ---------- Helpers de pré-remplissage (appelés depuis le HTML des modales) ---------- */
 function prefillTenantRent(sel){
   const opt = sel.selectedOptions[0];
@@ -731,6 +806,16 @@ async function deleteBuilding(id){
     toast('Immeuble supprimé');
   } catch (err) { toast('Erreur : ' + err.message, 'err'); }
 }
+function showOccupancyHistory(propertyId){
+  const p = cache.properties.find(x => x.id === propertyId);
+  const history = cache.tenants.filter(t => t.propertyId === propertyId).sort((a, b) => (a.dateEntree || '').localeCompare(b.dateEntree || ''));
+  const body = history.length === 0 ? `<p class="empty">Aucun locataire enregistré pour ce bien.</p>` : history.map(t => `
+    <div class="ledger-row">
+      <span>${esc(t.nom)}${t.statut !== 'actif' ? ' <span class="dim">(parti)</span>' : ''}</span>
+      <span class="dim">${t.dateEntree || '—'} → ${t.statut === 'actif' ? "aujourd'hui" : (t.dateSortie || '—')}</span>
+    </div>`).join('');
+  openModal(`Historique — ${p ? p.nom : 'Bien'}`, body, () => closeModal(), 'Fermer');
+}
 function renderBiens(){
   const root = document.getElementById('view-root');
   const limit = propertyLimit();
@@ -741,6 +826,7 @@ function renderBiens(){
               <td class="num" data-label="Loyer">${fmtFCFA(p.loyerMensuel)}</td>
               <td data-label="Statut"><span class="badge-stamp ${p.statut === 'occupe' ? 'occupied' : 'vacant'}">${p.statut === 'occupe' ? 'Occupé' : 'Vacant'}</span></td>
               <td class="actions">
+                <button class="btn-icon" data-action="show-history" data-id="${p.id}" title="Historique d'occupation">🕐</button>
                 <button class="btn-ghost" data-action="edit-property" data-id="${p.id}">Modifier</button>
                 <button class="btn-icon" data-action="delete-property" data-id="${p.id}" title="Supprimer">🗑</button>
               </td>
@@ -938,6 +1024,7 @@ function openTenantModal(existing){
     <label>Loyer mensuel (FCFA)<input name="loyerMensuel" type="number" min="0" value="${existing?.loyerMensuel ?? ''}" required></label>
     <label>Caution (FCFA)<input name="caution" type="number" min="0" value="${existing?.caution ?? ''}"></label>
     <label>Date d'entrée<input name="dateEntree" type="date" value="${existing?.dateEntree || ''}"></label>
+    <label>Date de sortie (si parti)<input name="dateSortie" type="date" value="${existing?.dateSortie || ''}"></label>
     <label>Durée du bail (mois)<input name="dureeBail" type="number" min="1" value="${existing?.dureeBail ?? 12}"></label>
     <label>Jour d'échéance du loyer (1-31)<input name="jourEcheance" type="number" min="1" max="31" value="${existing?.jourEcheance ?? 5}"></label>
     <label>Statut
@@ -961,7 +1048,7 @@ function openTenantModal(existing){
     const data = {
       nom: fd.get('nom').trim(), telephone: fd.get('telephone').trim(), propertyId: fd.get('propertyId'),
       loyerMensuel: Number(fd.get('loyerMensuel')), caution: Number(fd.get('caution') || 0),
-      dateEntree: fd.get('dateEntree'), dureeBail: Number(fd.get('dureeBail') || 12),
+      dateEntree: fd.get('dateEntree'), dateSortie: fd.get('dateSortie'), dureeBail: Number(fd.get('dureeBail') || 12),
       jourEcheance: Math.min(31, Math.max(1, Number(fd.get('jourEcheance') || 5))),
       statut: fd.get('statut'), cautionStatut: fd.get('cautionStatut'),
       cautionRembourse: Number(fd.get('cautionRembourse') || 0), cautionNote: fd.get('cautionNote').trim(),
@@ -1160,6 +1247,54 @@ function exportFullReportExcel(){
   const wsM = buildMaintenanceSheet(); autoWidth(wsM); XLSX.utils.book_append_sheet(wb, wsM, 'Maintenance');
   const wsD = buildExpensesSheet(); autoWidth(wsD); XLSX.utils.book_append_sheet(wb, wsD, 'Dépenses');
   XLSX.writeFile(wb, `rapport_loyerpro_${new Date().toISOString().slice(0, 10)}.xlsx`);
+}
+function exportFullBackup(){
+  const backup = {
+    exportedAt: new Date().toISOString(),
+    buildings: cache.buildings, properties: cache.properties, tenants: cache.tenants,
+    payments: cache.payments, maintenance: cache.maintenance, expenses: cache.expenses
+  };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `loyerpro_sauvegarde_${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+function triggerRestore(){
+  if (!confirm("Cette action va AJOUTER les données du fichier de sauvegarde à tes données actuelles (elle ne les remplace pas — si tu restaures deux fois, tu auras des doublons). Continuer ?")) return;
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = '.json';
+  input.onchange = e => { const file = e.target.files[0]; if (file) handleRestoreFile(file); };
+  input.click();
+}
+async function handleRestoreFile(file){
+  const reader = new FileReader();
+  reader.onload = async evt => {
+    try {
+      const data = JSON.parse(evt.target.result);
+      const idMap = {};
+      let count = 0;
+      const restoreCollection = async (key, remapFields) => {
+        const items = Array.isArray(data[key]) ? data[key] : [];
+        for (const item of items) {
+          const { id: oldId, ...rest } = item;
+          (remapFields || []).forEach(f => { if (rest[f] && idMap[rest[f]]) rest[f] = idMap[rest[f]]; });
+          const ref = await dbAdd(key, rest);
+          if (oldId && ref) idMap[oldId] = ref.id;
+          count++;
+        }
+      };
+      await restoreCollection('buildings');
+      await restoreCollection('properties', ['buildingId']);
+      await restoreCollection('tenants', ['propertyId']);
+      await restoreCollection('payments', ['tenantId', 'propertyId']);
+      await restoreCollection('maintenance', ['propertyId']);
+      await restoreCollection('expenses', ['propertyId']);
+      toast(`${count} élément(s) restauré(s) avec succès.`);
+    } catch (err) { toast('Fichier invalide : ' + err.message, 'err'); }
+  };
+  reader.readAsText(file);
 }
 function triggerImport(kind){
   if (typeof XLSX === 'undefined') { toast('Bibliothèque Excel non chargée — vérifie ta connexion et réessaie.', 'err'); return; }
@@ -1440,6 +1575,12 @@ function renderDepenses(){
   const totalTout = cache.expenses.reduce((s, d) => s + Number(d.montant || 0), 0);
   const revenuMois = cache.payments.filter(p => p.moisConcerne === curKey).reduce((s, p) => s + Number(p.montant || 0), 0);
   const netMois = revenuMois - totalMois;
+  const profitRows = cache.properties.map(p => {
+    const tenantIds = new Set(cache.tenants.filter(t => t.propertyId === p.id).map(t => t.id));
+    const revenu = cache.payments.filter(pay => tenantIds.has(pay.tenantId)).reduce((s, pay) => s + Number(pay.montant || 0), 0);
+    const depenses = cache.expenses.filter(d => d.propertyId === p.id).reduce((s, d) => s + Number(d.montant || 0), 0);
+    return { nom: p.nom, revenu, depenses, net: revenu - depenses };
+  }).sort((a, b) => b.net - a.net);
   root.innerHTML = `
     <div class="view-header"><button class="btn-primary" data-action="add-expense">+ Ajouter une dépense</button></div>
     <div class="stat-grid">
@@ -1447,6 +1588,21 @@ function renderDepenses(){
       <div class="stat-card ${netMois < 0 ? 'late' : ''}"><div class="stat-label">Bénéfice net (ce mois)</div><div class="stat-value ${netMois < 0 ? 'late' : ''}">${fmtFCFA(netMois)}</div><div class="stat-sub">${fmtFCFA(revenuMois)} loyers − ${fmtFCFA(totalMois)} dépenses</div></div>
       <div class="stat-card"><div class="stat-label">Total dépenses (tout)</div><div class="stat-value">${fmtFCFA(totalTout)}</div></div>
     </div>
+    ${profitRows.length === 0 ? '' : `
+    <div class="card">
+      <h3>Rentabilité par bien (depuis le début)</h3>
+      <table class="data-table">
+        <thead><tr><th>Bien</th><th class="num">Revenus</th><th class="num">Dépenses</th><th class="num">Net</th></tr></thead>
+        <tbody>
+          ${profitRows.map(r => `<tr>
+              <td class="name">${esc(r.nom)}</td>
+              <td class="num" data-label="Revenus">${fmtFCFA(r.revenu)}</td>
+              <td class="num" data-label="Dépenses">${fmtFCFA(r.depenses)}</td>
+              <td class="num" data-label="Net"><span style="color:${r.net < 0 ? 'var(--danger)' : 'var(--success)'};font-weight:600;">${fmtFCFA(r.net)}</span></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`}
     <div class="card">
       ${cache.expenses.length === 0 ? `<p class="empty">Aucune dépense enregistrée.</p>` : `
       <table class="data-table">
@@ -1558,10 +1714,21 @@ function renderDashboard(){
     </div>`;
   }
 
+  const leaseEnds = getUpcomingLeaseEnds();
+  const leaseCard = leaseEnds.length === 0 ? '' : `<div class="card">
+    <h3>📆 Fins de bail à venir (30 jours)</h3>
+    ${leaseEnds.map(({ tenant, days }) => `
+      <div class="ledger-row">
+        <span>${esc(tenant.nom)} <span class="dim">— ${days === 0 ? "aujourd'hui" : `dans ${days} j`}</span></span>
+        ${tenant.telephone ? `<button class="btn-icon" data-action="lease-reminder" data-id="${tenant.id}" title="Rappel WhatsApp">💬</button>` : ''}
+      </div>`).join('')}
+  </div>`;
+
   root.innerHTML = `
     <div class="view-header"><button class="btn-ghost" data-action="share-summary">📤 Partager le résumé (WhatsApp)</button></div>
     ${trialBanner}
     ${onboardingCard}
+    ${leaseCard}
     <div class="stat-grid">
       <div class="stat-card">
         <div class="stat-top"><div class="stat-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="5" width="16" height="11" rx="2"/><path d="M2 9h16"/><circle cx="14" cy="13" r="1.2"/></svg></div></div>
@@ -1671,7 +1838,11 @@ function renderRapports(){
             <span class="amount">${fmtFCFA(total)}</span>
           </div>`).join('')}
     </div>
-    <div class="view-header"><button class="btn-ghost" data-action="export-full-report">Exporter le rapport complet (Excel)</button></div>`;
+    <div class="view-header">
+      <button class="btn-ghost" data-action="export-full-report">Exporter le rapport complet (Excel)</button>
+      <button class="btn-ghost" data-action="export-backup">💾 Sauvegarde complète (JSON)</button>
+      <button class="btn-ghost" data-action="import-backup">Restaurer depuis une sauvegarde</button>
+    </div>`;
 }
 
 /* ======================================================
@@ -1976,6 +2147,7 @@ function onViewClick(e){
     'delete-building': () => deleteBuilding(id),
     'edit-property': () => openPropertyModal(cache.properties.find(p => p.id === id)),
     'delete-property': () => deleteProperty(id),
+    'show-history': () => showOccupancyHistory(id),
     'add-tenant': () => openTenantModal(),
     'edit-tenant': () => openTenantModal(cache.tenants.find(t => t.id === id)),
     'delete-tenant': () => deleteTenant(id),
@@ -1986,6 +2158,8 @@ function onViewClick(e){
     'share-portal': () => shareTenantPortal(id),
     'export-payments': () => exportPaymentsExcel(),
     'export-full-report': () => exportFullReportExcel(),
+    'export-backup': () => exportFullBackup(),
+    'import-backup': () => triggerRestore(),
     'add-maintenance': () => openMaintenanceModal(),
     'delete-maintenance': () => deleteMaintenance(id),
     'add-expense': () => openExpenseModal(),
@@ -1993,6 +2167,7 @@ function onViewClick(e){
     'send-assistant': () => sendAssistantMessage(),
     'request-plan': () => openPlanRequestModal(id),
     'whatsapp-reminder': () => sendWhatsAppReminder(id),
+    'lease-reminder': () => sendLeaseEndReminder(id),
     'share-summary': () => shareMonthlySummary(),
     'share-referral': () => shareReferral(),
     'import-properties': () => triggerImport('properties'),
@@ -2066,6 +2241,7 @@ async function submitSupportRequest(formData){
       landlordId: currentUser.uid,
       landlordNom: landlordData?.nom || currentUser.email,
       landlordEmail: currentUser.email,
+      landlordTelephone: landlordData?.telephone || '',
       sujet, message,
       statut: 'nouveau',
       dateCreation: new Date().toISOString().slice(0, 10)
@@ -2208,6 +2384,7 @@ document.getElementById('signup-form').addEventListener('submit', async e => {
 document.getElementById('logout-btn').addEventListener('click', () => {
   if (demoMode) exitDemoMode(); else auth.signOut();
 });
+document.getElementById('search-btn').addEventListener('click', openSearchModal);
 document.getElementById('support-btn').addEventListener('click', openSupportModal);
 document.getElementById('view-root').addEventListener('click', onViewClick);
 window.addEventListener('hashchange', router);
