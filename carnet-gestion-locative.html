@@ -555,6 +555,7 @@ function sendLeaseEndReminder(tenantId){
   window.open(link, '_blank');
 }
 function monthLabel(k){
+  const parts = String(k||'').split('-');
   const noms = ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Août','Sep','Oct','Nov','Déc'];
   const m = Number(parts[1]);
   return m ? `${noms[m-1]} ${parts[0]}` : (k || '—');
