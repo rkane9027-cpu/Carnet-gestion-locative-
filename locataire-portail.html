@@ -137,6 +137,7 @@ if (!token) {
         <h2>Bonjour ${esc(d.tenantNom)}</h2>
         <p class="dim">${esc(d.propertyNom || '—')}${d.propertyQuartier ? ' · ' + esc(d.propertyQuartier) : ''}</p>
         <div style="margin-top:10px;">
+          <div class="info-row"><span>Ton bailleur</span><span>${esc(d.landlordNom || '—')}</span></div>
           <div class="info-row"><span>Loyer mensuel</span><span>${fmtFCFA(d.loyerMensuel)}</span></div>
           <div class="info-row"><span>Dépôt de garantie</span><span>${fmtFCFA(d.caution)}</span></div>
           <div class="info-row"><span>Jour d'échéance</span><span>Le ${d.jourEcheance || 5} de chaque mois</span></div>

@@ -1898,10 +1898,13 @@ function renderDashboard(){
       </div>`).join('')}
   </div>`;
 
-  const firstName = (landlordData?.nom || '').trim().split(' ')[0] || '';
+  const nameNotSet = !landlordData?.nom || landlordData.nom === currentUser?.email;
+  const firstName = nameNotSet ? '' : landlordData.nom.trim().split(' ')[0];
 
   root.innerHTML = `
-    ${firstName ? `<h2 style="margin:0 0 16px;font-size:19px;">Bonjour, ${esc(firstName)}</h2>` : ''}
+    ${nameNotSet
+      ? `<div class="card" style="border-color:var(--warn);margin-bottom:16px;"><p class="dim" style="margin:0;">Ton nom n'est pas encore renseigné — tes locataires le verront aussi. <button type="button" class="btn-ghost" data-action="edit-profile" style="padding:4px 10px;font-size:12px;margin-left:6px;">Ajouter mon nom</button></p></div>`
+      : `<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px;"><h2 style="margin:0;font-size:19px;">Bonjour, ${esc(firstName)}</h2><button type="button" class="btn-ghost" data-action="edit-profile" style="padding:4px 10px;font-size:12px;">Modifier</button></div>`}
     <div class="view-header"><button class="btn-ghost" data-action="share-summary">Partager le résumé (WhatsApp)</button></div>
     ${trialBanner}
     ${onboardingCard}
@@ -2049,6 +2052,20 @@ async function getReferralCount(){
     const snap = await db.collection('referralEvents').where('referrerUid', '==', currentUser.uid).get();
     return snap.size;
   } catch (err) { return 0; }
+}
+function openProfileModal(){
+  openModal('Modifier mon profil', `
+    <label>Nom complet<input name="nom" value="${esc(landlordData?.nom && landlordData.nom !== currentUser?.email ? landlordData.nom : '')}" required placeholder="Ton nom"></label>
+    <label>Téléphone<input name="telephone" value="${esc(landlordData?.telephone || '')}" placeholder="07 00 00 00 00"></label>
+  `, async fd => {
+    const data = { nom: fd.get('nom').trim(), telephone: fd.get('telephone').trim() };
+    try {
+      await db.collection('landlords').doc(currentUser.uid).update(data);
+      Object.assign(landlordData, data);
+      closeModal(); toast('Profil mis à jour'); router();
+      cache.tenants.forEach(t => syncTenantPortal(t.id));
+    } catch (err) { toast('Erreur : ' + err.message, 'err'); }
+  }, 'Enregistrer');
 }
 async function checkReferralRewards(){
   if (demoMode || !currentUser) return;
@@ -2235,7 +2252,7 @@ function buildDataContext(){
 async function askGeminiAssistant(question){
   if (!GEMINI_API_KEY || GEMINI_API_KEY === 'REMPLACE_MOI') throw new Error('Clé API Gemini non configurée dans le code.');
   const context = buildDataContext();
-  const nomProprietaire = landlordData?.nom || '';
+  const nomProprietaire = (landlordData?.nom && landlordData.nom !== currentUser?.email) ? landlordData.nom : '';
   const body = {
     system_instruction: {
       parts: [{ text: `Tu es l'assistant intégré à Loyer Pro, une app de gestion locative pour des propriétaires en Côte d'Ivoire. Tu parles avec ${nomProprietaire || 'le propriétaire'} — adresse-toi à lui/elle par son prénom naturellement de temps en temps, sans exagérer. Réponds en français, de façon concise et directe, en te basant UNIQUEMENT sur les données ci-dessous. Si l'information n'y est pas, dis-le clairement plutôt que d'inventer.\n\nDonnées actuelles du propriétaire :\n${context}` }]
@@ -2268,7 +2285,7 @@ function renderAssistant(){
     </div>
     ${configured && access ? `
     <div class="card" id="chat-window" style="max-height:50vh;overflow-y:auto;">
-      ${assistantMessages.length === 0 ? `<p class="empty">${landlordData?.nom ? `Salut ${esc((landlordData.nom || '').split(' ')[0])}, ` : ''}Essaie : "Qui est en retard ce mois ?" ou "Quel est mon revenu ce mois-ci ?"</p>` :
+      ${assistantMessages.length === 0 ? `<p class="empty">${landlordData?.nom && landlordData.nom !== currentUser?.email ? `Salut ${esc((landlordData.nom || '').split(' ')[0])}, ` : ''}Essaie : "Qui est en retard ce mois ?" ou "Quel est mon revenu ce mois-ci ?"</p>` :
         assistantMessages.map(m => `<div class="chat-msg ${m.role}">${esc(m.text)}</div>`).join('')}
     </div>
     <div class="row-actions">
@@ -2371,6 +2388,7 @@ function onViewClick(e){
     'whatsapp-reminder': () => sendWhatsAppReminder(id),
     'lease-reminder': () => sendLeaseEndReminder(id),
     'share-summary': () => shareMonthlySummary(),
+    'edit-profile': () => openProfileModal(),
     'share-referral': () => shareReferral(),
     'import-properties': () => triggerImport('properties'),
     'import-tenants': () => triggerImport('tenants'),
