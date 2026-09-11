@@ -102,6 +102,18 @@ a{ color:inherit; text-decoration:none; }
   font-family:'IBM Plex Sans'; font-weight:600; font-size:13.5px; transition:background .15s,color .15s;
 }
 .auth-tab.active{ background:var(--surface); color:var(--primary); box-shadow:var(--shadow); }
+.role-question{ text-align:center; color:var(--text-dim); font-size:14px; margin:0 0 14px; }
+.role-options{ display:flex; gap:10px; }
+.role-btn{
+  flex:1; display:flex; flex-direction:column; align-items:center; gap:5px; padding:16px 8px;
+  border:1px solid var(--border); border-radius:12px; background:var(--surface); cursor:pointer; font-family:inherit;
+  transition:border-color .15s, background .15s;
+}
+.role-btn:hover{ border-color:var(--primary); background:var(--primary-soft); }
+.role-icon{ font-size:24px; }
+.role-label{ font-weight:600; font-size:13.5px; color:var(--text); }
+.role-sub{ font-size:11px; color:var(--text-dim); text-align:center; line-height:1.3; }
+.back-to-role{ background:none; border:none; color:var(--text-dim); font-size:13px; cursor:pointer; margin-top:14px; padding:0; text-decoration:underline; }
 .auth-form label{ display:block; margin-bottom:14px; font-size:13px; color:var(--text-dim); }
 .auth-form input{ width:100%; margin-top:6px; }
 .auth-form .btn-primary{ width:100%; margin-top:6px; }
@@ -342,26 +354,48 @@ input:focus, select:focus, textarea:focus{ outline:2px solid var(--primary); out
     </div>
     <p class="brand-tagline">Vos loyers, toujours à jour.</p>
 
-    <div class="auth-tabs">
-      <button type="button" class="auth-tab active" data-tab="login">Connexion</button>
-      <button type="button" class="auth-tab" data-tab="signup">Créer un compte</button>
+    <div id="role-chooser">
+      <p class="role-question">Tu es...</p>
+      <div class="role-options">
+        <button type="button" class="role-btn" id="role-owner-btn">
+                    <span class="role-label">Propriétaire</span>
+          <span class="role-sub">Je gère mes biens et locataires</span>
+        </button>
+        <button type="button" class="role-btn" id="role-tenant-btn">
+                    <span class="role-label">Locataire</span>
+          <span class="role-sub">J'ai reçu un lien de mon bailleur</span>
+        </button>
+      </div>
     </div>
 
-    <form id="login-form" class="auth-form">
-      <label>Email<input type="email" id="login-email" required autocomplete="email"></label>
-      <label>Mot de passe<input type="password" id="login-password" required autocomplete="current-password"></label>
-      <button type="submit" class="btn-primary" id="login-submit-btn">Se connecter</button>
-      <p class="auth-error" id="login-error"></p>
-    </form>
+    <div id="tenant-instructions" class="hidden">
+      <p class="dim" style="text-align:center;font-size:13.5px;line-height:1.6;">Cette page est réservée aux propriétaires. Pour consulter tes paiements ou signer ton bail, demande à ton bailleur de te partager ton <strong>lien personnel du portail locataire</strong> — pas besoin de créer de compte ici.</p>
+      <div style="text-align:center;"><button type="button" class="back-to-role">← Retour</button></div>
+    </div>
 
-    <form id="signup-form" class="auth-form hidden">
-      <label>Nom complet<input type="text" id="signup-name" required autocomplete="name"></label>
-      <label>Email<input type="email" id="signup-email" required autocomplete="email"></label>
-      <label>Téléphone<input type="tel" id="signup-phone" placeholder="07 00 00 00 00"></label>
-      <label>Mot de passe<input type="password" id="signup-password" required minlength="6" autocomplete="new-password"></label>
-      <button type="submit" class="btn-primary">Créer mon compte</button>
-      <p class="auth-error" id="signup-error"></p>
-    </form>
+    <div id="owner-auth" class="hidden">
+      <div class="auth-tabs">
+        <button type="button" class="auth-tab active" data-tab="login">Connexion</button>
+        <button type="button" class="auth-tab" data-tab="signup">Créer un compte</button>
+      </div>
+
+      <form id="login-form" class="auth-form">
+        <label>Email<input type="email" id="login-email" required autocomplete="email"></label>
+        <label>Mot de passe<input type="password" id="login-password" required autocomplete="current-password"></label>
+        <button type="submit" class="btn-primary" id="login-submit-btn">Se connecter</button>
+        <p class="auth-error" id="login-error"></p>
+      </form>
+
+      <form id="signup-form" class="auth-form hidden">
+        <label>Nom complet<input type="text" id="signup-name" required autocomplete="name"></label>
+        <label>Email<input type="email" id="signup-email" required autocomplete="email"></label>
+        <label>Téléphone<input type="tel" id="signup-phone" placeholder="07 00 00 00 00"></label>
+        <label>Mot de passe<input type="password" id="signup-password" required minlength="6" autocomplete="new-password"></label>
+        <button type="submit" class="btn-primary">Créer mon compte</button>
+        <p class="auth-error" id="signup-error"></p>
+      </form>
+      <div style="text-align:center;"><button type="button" class="back-to-role">← Retour</button></div>
+    </div>
   </div>
 </div>
 
@@ -394,7 +428,7 @@ input:focus, select:focus, textarea:focus{ outline:2px solid var(--primary); out
           <button type="button" class="theme-opt active" data-theme-choice="light">Clair</button>
           <button type="button" class="theme-opt" data-theme-choice="dark">Sombre</button>
         </div>
-        <button type="button" class="btn-icon" id="search-btn" title="Recherche" style="font-size:16px;border:1px solid var(--border);border-radius:50%;width:32px;height:32px;">🔍</button>
+        <button type="button" class="btn-ghost" id="search-btn" title="Recherche" style="font-size:13px;">Chercher</button>
         <button type="button" class="btn-icon" id="support-btn" title="Aide / Support" style="font-size:18px;border:1px solid var(--border);border-radius:50%;width:32px;height:32px;">?</button>
         <div class="topbar-date" id="topbar-date"></div>
       </div>
@@ -500,7 +534,7 @@ function showInstallBanner(isIOSMode){
   const banner = document.getElementById('install-banner');
   if (!banner) return;
   if (isIOSMode) {
-    document.getElementById('install-banner-sub').textContent = "Appuie sur Partager 📤 puis \"Sur l'écran d'accueil\".";
+    document.getElementById('install-banner-sub').textContent = "Appuie sur Partager puis \"Sur l'écran d'accueil\".";
     document.getElementById('install-banner-btn').style.display = 'none';
   }
   banner.classList.remove('hidden');
@@ -533,7 +567,7 @@ if (isIOS() && !isStandalone()) {
 let currentUser = null;
 let landlordData = null;
 let unsubscribers = [];
-let cache = { properties: [], tenants: [], payments: [], maintenance: [], buildings: [], expenses: [] };
+let cache = { properties: [], tenants: [], payments: [], maintenance: [], buildings: [], expenses: [], pendingPayments: [], pendingMaintenanceReports: [] };
 let demoMode = false;
 let demoRequests = [];
 let assistantMessages = [];
@@ -656,7 +690,7 @@ function shareMonthlySummary(){
   const occRate = totalProps ? Math.round(occupied / totalProps * 100) : 0;
   const mois = monthLabel(curKey);
   const bailleur = landlordData?.nom || '';
-  const message = `📊 Résumé Loyer Pro — ${mois}\n\n💰 Revenus encaissés : ${fmtFCFA(revenue)} sur ${fmtFCFA(expected)} attendus\n⏰ Loyers en retard : ${lateCount}\n🏠 Occupation : ${occRate}% (${occupied}/${totalProps} biens)\n\nGénéré via Loyer Pro${bailleur ? ' — ' + bailleur : ''}.`;
+  const message = `Résumé Loyer Pro — ${mois}\n\nRevenus encaissés : ${fmtFCFA(revenue)} sur ${fmtFCFA(expected)} attendus\nLoyers en retard : ${lateCount}\nOccupation : ${occRate}% (${occupied}/${totalProps} biens)\n\nGénéré via Loyer Pro${bailleur ? ' — ' + bailleur : ''}.`;
   window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
 }
 function toast(msg, type){
@@ -744,11 +778,12 @@ function enterDemoMode(){
 function exitDemoMode(){
   demoMode = false;
   currentUser = null; landlordData = null;
-  cache = { properties: [], tenants: [], payments: [], maintenance: [], buildings: [], expenses: [] };
+  cache = { properties: [], tenants: [], payments: [], maintenance: [], buildings: [], expenses: [], pendingPayments: [], pendingMaintenanceReports: [] };
   demoRequests = [];
   assistantMessages = [];
   document.getElementById('app-shell').classList.add('hidden');
   document.getElementById('auth-screen').classList.remove('hidden');
+  showRoleChooser();
 }
 function updateDate(){
   const d = new Date();
@@ -815,29 +850,29 @@ function renderSearchResults(query){
   cache.tenants.forEach(t => {
     if ((t.nom || '').toLowerCase().includes(q) || (t.telephone || '').includes(q)) {
       const p = cache.properties.find(x => x.id === t.propertyId);
-      results.push({ icon: '👤', label: t.nom, sub: p ? p.nom : 'Locataire', route: 'locataires' });
+      results.push({ icon: '', label: t.nom, sub: p ? p.nom : 'Locataire', route: 'locataires' });
     }
   });
   cache.properties.forEach(p => {
     if ((p.nom || '').toLowerCase().includes(q) || (p.quartier || '').toLowerCase().includes(q)) {
-      results.push({ icon: '🏠', label: p.nom, sub: p.quartier || 'Bien', route: 'biens' });
+      results.push({ icon: '', label: p.nom, sub: p.quartier || 'Bien', route: 'biens' });
     }
   });
   cache.payments.forEach(pay => {
     const t = cache.tenants.find(x => x.id === pay.tenantId);
     if (t && (t.nom || '').toLowerCase().includes(q)) {
-      results.push({ icon: '💳', label: `${t.nom} — ${monthLabel(pay.moisConcerne)}`, sub: fmtFCFA(pay.montant), route: 'paiements' });
+      results.push({ icon: '', label: `${t.nom} — ${monthLabel(pay.moisConcerne)}`, sub: fmtFCFA(pay.montant), route: 'paiements' });
     }
   });
   cache.maintenance.forEach(m => {
     if ((m.titre || '').toLowerCase().includes(q)) {
-      results.push({ icon: '🛠️', label: m.titre, sub: 'Maintenance', route: 'maintenance' });
+      results.push({ icon: '', label: m.titre, sub: 'Maintenance', route: 'maintenance' });
     }
   });
   if (results.length === 0) { el.innerHTML = `<p class="dim" style="padding:6px 0;">Aucun résultat.</p>`; return; }
   el.innerHTML = results.slice(0, 20).map((r, i) => `
     <div class="ledger-row" style="cursor:pointer;" data-goto-idx="${i}">
-      <span>${r.icon} ${esc(r.label)}</span>
+      <span>${esc(r.label)}</span>
       <span class="dim">${esc(r.sub)}</span>
     </div>`).join('');
   el.querySelectorAll('[data-goto-idx]').forEach(row => {
@@ -910,9 +945,9 @@ function renderBiens(){
               <td class="num" data-label="Loyer">${fmtFCFA(p.loyerMensuel)}</td>
               <td data-label="Statut"><span class="badge-stamp ${p.statut === 'occupe' ? 'occupied' : 'vacant'}">${p.statut === 'occupe' ? 'Occupé' : 'Vacant'}</span></td>
               <td class="actions">
-                <button class="btn-icon" data-action="show-history" data-id="${p.id}" title="Historique d'occupation">🕐</button>
+                <button class="btn-icon" data-action="show-history" data-id="${p.id}" title="Historique d'occupation">Historique</button>
                 <button class="btn-ghost" data-action="edit-property" data-id="${p.id}">Modifier</button>
-                <button class="btn-icon" data-action="delete-property" data-id="${p.id}" title="Supprimer">🗑</button>
+                <button class="btn-icon" data-action="delete-property" data-id="${p.id}" title="Supprimer">Suppr.</button>
               </td>
             </tr>`;
   const buildingIds = new Set(cache.buildings.map(b => b.id));
@@ -925,14 +960,14 @@ function renderBiens(){
     return `<div class="card">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
         <div>
-          <h3 style="margin:0;">🏢 ${esc(b.nom)}</h3>
+          <h3 style="margin:0;">${esc(b.nom)}</h3>
           <span class="dim">${esc(b.quartier || '')}${units.length ? ` · ${units.length} appart. · ${occupied}/${units.length} occupés (${rate}%)` : ' · Aucun appartement'}</span>
         </div>
       </div>
       <div class="row-actions" style="margin-bottom:12px;">
         <button class="btn-ghost" data-action="add-unit" data-id="${b.id}">+ Ajouter un appartement</button>
         <button class="btn-ghost" data-action="edit-building" data-id="${b.id}">Modifier l'immeuble</button>
-        <button class="btn-icon" data-action="delete-building" data-id="${b.id}" title="Supprimer l'immeuble">🗑</button>
+        <button class="btn-icon" data-action="delete-building" data-id="${b.id}" title="Supprimer l'immeuble">Suppr.</button>
       </div>
       ${units.length === 0 ? `<p class="empty">Aucun appartement dans cet immeuble pour l'instant.</p>` : `
       <table class="data-table">
@@ -1055,7 +1090,7 @@ function renderLocataires(){
             const statusBadge = (t.statut !== 'actif'
               ? `<span class="badge-stamp vacant">Parti</span>`
               : isLate ? `<span class="badge-stamp late">En retard</span>` : `<span class="badge-stamp paid">À jour</span>`)
-              + (needsCaution ? `<div class="dim" style="font-size:11px;margin-top:3px;">⚠ Caution à traiter</div>` : '');
+              + (needsCaution ? `<div class="dim" style="font-size:11px;margin-top:3px;">Caution à traiter</div>` : '');
             return `<tr>
               <td class="name">${esc(t.nom)}</td>
               <td data-label="Bien">${esc(p ? p.nom : 'Bien supprimé')}</td>
@@ -1064,11 +1099,11 @@ function renderLocataires(){
               <td data-label="Fiabilité">${reliabilityBadge(reliabilityScore(t.id))}</td>
               <td data-label="Statut">${statusBadge}</td>
               <td class="actions">
-                ${isLate && t.telephone ? `<button class="btn-icon" data-action="whatsapp-reminder" data-id="${t.id}" title="Rappel WhatsApp">💬</button>` : ''}
-                <button class="btn-icon" data-action="gen-contract" data-id="${t.id}" title="Contrat de bail">📄</button>
-                <button class="btn-icon" data-action="share-portal" data-id="${t.id}" title="Lien du portail locataire">🔗</button>
+                ${isLate && t.telephone ? `<button class="btn-icon" data-action="whatsapp-reminder" data-id="${t.id}" title="Rappel WhatsApp">WhatsApp</button>` : ''}
+                <button class="btn-icon" data-action="gen-contract" data-id="${t.id}" title="Contrat de bail">Contrat</button>
+                <button class="btn-icon" data-action="share-portal" data-id="${t.id}" title="Lien du portail locataire">Portail</button>
                 <button class="btn-ghost" data-action="edit-tenant" data-id="${t.id}">Modifier</button>
-                <button class="btn-icon" data-action="delete-tenant" data-id="${t.id}" title="Supprimer">🗑</button>
+                <button class="btn-icon" data-action="delete-tenant" data-id="${t.id}" title="Supprimer">Suppr.</button>
               </td>
             </tr>`;
           }).join('')}
@@ -1086,9 +1121,12 @@ async function syncTenantPortal(tenantId, tenantData){
       .sort((a, b) => (a.datePaiement || '').localeCompare(b.datePaiement || ''))
       .map(x => ({ mois: monthLabel(x.moisConcerne), montant: Number(x.montant || 0), date: x.datePaiement || '', methode: x.methode || '' })) : [];
     await db.collection('tenantPortals').doc(t.portalToken).set({
-      landlordNom: landlordData?.nom || '', tenantNom: t.nom, propertyNom: p ? p.nom : '', propertyQuartier: p ? (p.quartier || '') : '',
+      landlordId: currentUser.uid, tenantId: tenantId || '', propertyId: t.propertyId || '',
+      landlordNom: landlordData?.nom || '', landlordTelephone: landlordData?.telephone || '',
+      tenantNom: t.nom, propertyNom: p ? p.nom : '', propertyQuartier: p ? (p.quartier || '') : '',
       loyerMensuel: Number(t.loyerMensuel || 0), caution: Number(t.caution || 0), dateEntree: t.dateEntree || '',
-      jourEcheance: t.jourEcheance || 5, statut: t.statut || 'actif', payments, lastUpdated: new Date().toISOString()
+      dureeBail: Number(t.dureeBail || 12), jourEcheance: t.jourEcheance || 5, statut: t.statut || 'actif',
+      payments, lastUpdated: new Date().toISOString()
     });
   } catch (err) { console.warn('Synchronisation du portail locataire échouée', err); }
 }
@@ -1139,10 +1177,11 @@ function openTenantModal(existing){
       portalToken: existing?.portalToken || genToken()
     };
     try {
+      let newId = existing?.id;
       if (isEdit) await dbUpdate('tenants', existing.id, data);
-      else await dbAdd('tenants', data);
+      else { const ref = await dbAdd('tenants', data); newId = ref.id; }
       closeModal(); toast(isEdit ? 'Locataire mis à jour' : 'Locataire ajouté');
-      syncTenantPortal(isEdit ? existing.id : null, data);
+      syncTenantPortal(newId, data);
     } catch (err) { toast('Erreur : ' + err.message, 'err'); }
   });
 }
@@ -1173,7 +1212,7 @@ function renderPaiements(){
         <span>${esc(u.tenant.nom)}${u.isLate ? ' <span class="dim">(en retard)</span>' : ''}</span>
         <span style="display:flex;align-items:center;gap:10px;">
           <span class="dim">${u.isLate ? 'à régulariser' : u.due.toLocaleDateString('fr-FR')}</span>
-          ${u.tenant.telephone ? `<button class="btn-icon" data-action="whatsapp-reminder" data-id="${u.tenant.id}" title="Rappel WhatsApp">💬</button>` : ''}
+          ${u.tenant.telephone ? `<button class="btn-icon" data-action="whatsapp-reminder" data-id="${u.tenant.id}" title="Rappel WhatsApp">WhatsApp</button>` : ''}
         </span>
       </div>`;
   const echeancierCard = upcoming.length === 0 ? '' : `<div class="card">
@@ -1203,8 +1242,8 @@ function renderPaiements(){
               <td data-label="Date">${esc(p.datePaiement || '—')}</td>
               <td class="num" data-label="Montant">${fmtFCFA(p.montant)}</td>
               <td class="actions">
-                <button class="btn-icon" data-action="download-receipt" data-id="${p.id}" title="Partager la quittance">🧾</button>
-                <button class="btn-icon" data-action="delete-payment" data-id="${p.id}" title="Supprimer">🗑</button>
+                <button class="btn-icon" data-action="download-receipt" data-id="${p.id}" title="Partager la quittance">Reçu</button>
+                <button class="btn-icon" data-action="delete-payment" data-id="${p.id}" title="Supprimer">Suppr.</button>
               </td>
             </tr>`;
           }).join('')}
@@ -1250,6 +1289,21 @@ function deletePayment(id){
   if (!confirm('Supprimer ce paiement ?')) return;
   const p = cache.payments.find(x => x.id === id);
   dbDelete('payments', id).then(() => { toast('Paiement supprimé'); if (p) syncTenantPortal(p.tenantId); }).catch(err => toast('Erreur : ' + err.message, 'err'));
+}
+async function confirmPendingPayment(id){
+  const p = cache.pendingPayments.find(x => x.id === id);
+  if (!p) return;
+  try {
+    await dbAdd('payments', { tenantId: p.tenantId, propertyId: p.propertyId || '', montant: p.montant, methode: 'Déclaré par le locataire', moisConcerne: p.moisConcerne, datePaiement: new Date().toISOString().slice(0, 10) });
+    await db.collection('pendingPayments').doc(id).update({ statut: 'confirme' });
+    syncTenantPortal(p.tenantId);
+    toast('Paiement confirmé et ajouté');
+  } catch (err) { toast('Erreur : ' + err.message, 'err'); }
+}
+async function rejectPendingPayment(id){
+  if (!confirm('Rejeter cette déclaration de paiement ?')) return;
+  try { await db.collection('pendingPayments').doc(id).update({ statut: 'rejete' }); toast('Déclaration rejetée'); }
+  catch (err) { toast('Erreur : ' + err.message, 'err'); }
 }
 function buildPaymentsSheet(){
   const rows = [...cache.payments].sort((a, b) => (a.datePaiement || '').localeCompare(b.datePaiement || '')).map(p => {
@@ -1608,7 +1662,7 @@ function renderMaintenance(){
               </td>
               <td class="num" data-label="Coût">${m.coutEstime ? fmtFCFA(m.coutEstime) : '—'}</td>
               <td class="actions">
-                <button class="btn-icon" data-action="delete-maintenance" data-id="${m.id}" title="Supprimer">🗑</button>
+                <button class="btn-icon" data-action="delete-maintenance" data-id="${m.id}" title="Supprimer">Suppr.</button>
               </td>
             </tr>`;
           }).join('')}
@@ -1646,6 +1700,20 @@ function openMaintenanceModal(){
 function deleteMaintenance(id){
   if (!confirm('Supprimer ce ticket ?')) return;
   dbDelete('maintenance', id).then(() => toast('Ticket supprimé')).catch(err => toast('Erreur : ' + err.message, 'err'));
+}
+async function confirmPendingReport(id){
+  const r = cache.pendingMaintenanceReports.find(x => x.id === id);
+  if (!r) return;
+  try {
+    await dbAdd('maintenance', { titre: r.titre, description: r.description || '', propertyId: r.propertyId || '', priorite: 'Moyenne', statut: 'ouvert', coutEstime: 0, dateCreation: new Date().toISOString().slice(0, 10) });
+    await db.collection('pendingMaintenance').doc(id).update({ statut: 'confirme' });
+    toast('Ticket créé à partir du signalement');
+  } catch (err) { toast('Erreur : ' + err.message, 'err'); }
+}
+async function rejectPendingReport(id){
+  if (!confirm('Rejeter ce signalement ?')) return;
+  try { await db.collection('pendingMaintenance').doc(id).update({ statut: 'rejete' }); toast('Signalement rejeté'); }
+  catch (err) { toast('Erreur : ' + err.message, 'err'); }
 }
 
 /* ======================================================
@@ -1700,7 +1768,7 @@ function renderDepenses(){
               <td data-label="Catégorie">${esc(d.categorie)}</td>
               <td class="num" data-label="Montant">${fmtFCFA(d.montant)}</td>
               <td data-label="Date">${d.date || '—'}</td>
-              <td class="actions"><button class="btn-icon" data-action="delete-expense" data-id="${d.id}" title="Supprimer">🗑</button></td>
+              <td class="actions"><button class="btn-icon" data-action="delete-expense" data-id="${d.id}" title="Supprimer">Suppr.</button></td>
             </tr>`;
           }).join('')}
         </tbody>
@@ -1789,9 +1857,9 @@ function renderDashboard(){
   const hasTenant = cache.tenants.length > 0;
   const hasPayment = cache.payments.length > 0;
   if (!hasProperty || !hasTenant || !hasPayment) {
-    const step = (done, label, href) => `<div class="ledger-row"><span>${done ? '✅' : '⬜'} ${label}</span>${!done ? `<a href="${href}" class="btn-ghost" style="text-decoration:none;">Aller</a>` : ''}</div>`;
+    const step = (done, label, href) => `<div class="ledger-row"><span>${done ? '<strong style="color:var(--success);">✓</strong> ' : ''}${label}</span>${!done ? `<a href="${href}" class="btn-ghost" style="text-decoration:none;">Aller</a>` : ''}</div>`;
     onboardingCard = `<div class="card">
-      <h3>🚀 Démarrage rapide</h3>
+      <h3>Démarrage rapide</h3>
       ${step(hasProperty, 'Ajoute ton premier bien', '#/biens')}
       ${step(hasTenant, 'Ajoute un locataire', '#/locataires')}
       ${step(hasPayment, 'Enregistre ton premier paiement', '#/paiements')}
@@ -1800,18 +1868,44 @@ function renderDashboard(){
 
   const leaseEnds = getUpcomingLeaseEnds();
   const leaseCard = leaseEnds.length === 0 ? '' : `<div class="card">
-    <h3>📆 Fins de bail à venir (30 jours)</h3>
+    <h3>Fins de bail à venir (30 jours)</h3>
     ${leaseEnds.map(({ tenant, days }) => `
       <div class="ledger-row">
         <span>${esc(tenant.nom)} <span class="dim">— ${days === 0 ? "aujourd'hui" : `dans ${days} j`}</span></span>
-        ${tenant.telephone ? `<button class="btn-icon" data-action="lease-reminder" data-id="${tenant.id}" title="Rappel WhatsApp">💬</button>` : ''}
+        ${tenant.telephone ? `<button class="btn-icon" data-action="lease-reminder" data-id="${tenant.id}" title="Rappel WhatsApp">WhatsApp</button>` : ''}
       </div>`).join('')}
   </div>`;
 
+  const pendingPayments = cache.pendingPayments || [];
+  const pendingReports = cache.pendingMaintenanceReports || [];
+  const declarationsCard = (pendingPayments.length === 0 && pendingReports.length === 0) ? '' : `<div class="card" style="border-color:var(--primary);">
+    <h3>Déclarations des locataires</h3>
+    ${pendingPayments.map(p => `
+      <div class="ledger-row">
+        <span>${esc(p.tenantNom)} déclare avoir payé <strong>${fmtFCFA(p.montant)}</strong> <span class="dim">— ${esc(monthLabel(p.moisConcerne))}</span></span>
+        <span style="display:flex;gap:8px;">
+          <button class="btn-ghost" data-action="confirm-pending-payment" data-id="${p.id}">Confirmer</button>
+          <button class="btn-icon" data-action="reject-pending-payment" data-id="${p.id}" title="Rejeter">Suppr.</button>
+        </span>
+      </div>`).join('')}
+    ${pendingReports.map(r => `
+      <div class="ledger-row">
+        <span>${esc(r.tenantNom)} signale : <strong>${esc(r.titre)}</strong></span>
+        <span style="display:flex;gap:8px;">
+          <button class="btn-ghost" data-action="confirm-pending-report" data-id="${r.id}">Créer le ticket</button>
+          <button class="btn-icon" data-action="reject-pending-report" data-id="${r.id}" title="Rejeter">Suppr.</button>
+        </span>
+      </div>`).join('')}
+  </div>`;
+
+  const firstName = (landlordData?.nom || '').trim().split(' ')[0] || '';
+
   root.innerHTML = `
-    <div class="view-header"><button class="btn-ghost" data-action="share-summary">📤 Partager le résumé (WhatsApp)</button></div>
+    ${firstName ? `<h2 style="margin:0 0 16px;font-size:19px;">Bonjour, ${esc(firstName)}</h2>` : ''}
+    <div class="view-header"><button class="btn-ghost" data-action="share-summary">Partager le résumé (WhatsApp)</button></div>
     ${trialBanner}
     ${onboardingCard}
+    ${declarationsCard}
     ${leaseCard}
     <div class="stat-grid">
       <div class="stat-card">
@@ -1859,7 +1953,7 @@ function renderDashboard(){
               <span>${esc(t.nom)}</span>
               <span style="display:flex;align-items:center;gap:10px;">
                 <span class="amount">${fmtFCFA(t.loyerMensuel)}</span>
-                ${t.telephone ? `<button class="btn-icon" data-action="whatsapp-reminder" data-id="${t.id}" title="Rappel WhatsApp">💬</button>` : ''}
+                ${t.telephone ? `<button class="btn-icon" data-action="whatsapp-reminder" data-id="${t.id}" title="Rappel WhatsApp">WhatsApp</button>` : ''}
               </span>
             </div>`).join('')}
       </div>
@@ -1924,7 +2018,7 @@ function renderRapports(){
     </div>
     <div class="view-header">
       <button class="btn-ghost" data-action="export-full-report">Exporter le rapport complet (Excel)</button>
-      <button class="btn-ghost" data-action="export-backup">💾 Sauvegarde complète (JSON)</button>
+      <button class="btn-ghost" data-action="export-backup">Sauvegarde complète (JSON)</button>
       <button class="btn-ghost" data-action="import-backup">Restaurer depuis une sauvegarde</button>
     </div>`;
 }
@@ -1969,7 +2063,7 @@ async function checkReferralRewards(){
     try {
       await db.collection('landlords').doc(currentUser.uid).update(updates);
       Object.assign(landlordData, updates);
-      toast(`🎉 Parrainage : ${newRewards} mois gratuit${newRewards > 1 ? 's' : ''} débloqué${newRewards > 1 ? 's' : ''} !`);
+      toast(`Parrainage : ${newRewards} mois gratuit${newRewards > 1 ? 's' : ''} débloqué${newRewards > 1 ? 's' : ''} !`);
       router();
     } catch (err) { /* silencieux */ }
   }
@@ -2008,6 +2102,7 @@ function renderAbonnement(){
       ${plan ? `<p class="dim">Plan : ${esc(PLANS[plan]?.nom || plan)}${expire && statut === 'actif' ? ' · Renouvellement : ' + esc(expire) : ''}</p>` :
         statut === 'essai' ? `<p class="dim">${trialExpired ? "Ton essai gratuit de 7 jours est terminé — choisis un plan ci-dessous pour continuer." : `Essai gratuit jusqu'au ${esc(expire || '—')}.`}</p>` :
         `<p class="dim">Aucun plan payant actif pour l'instant.</p>`}
+      ${statut === 'en_attente' ? `<div id="pending-request-details" class="dim" style="margin-top:10px;font-size:13px;">Chargement des détails...</div>` : ''}
     </div>
 
     <div class="plan-grid">
@@ -2022,7 +2117,7 @@ function renderAbonnement(){
     </div>
 
     <div class="card">
-      <h3>🎁 Programme de parrainage</h3>
+      <h3>Programme de parrainage</h3>
       <p class="dim">Invite d'autres propriétaires à rejoindre Loyer Pro. Pour chaque groupe de <strong>10 inscriptions</strong> via ton lien, tu débloques <strong>1 mois gratuit</strong> (plan Pro).</p>
       <div class="row-actions">
         <button class="btn-primary" data-action="share-referral">Partager mon lien de parrainage</button>
@@ -2037,45 +2132,63 @@ function renderAbonnement(){
     const el = document.getElementById('referral-progress');
     if (el) el.textContent = `${count} inscription${count !== 1 ? 's' : ''} via ton lien${granted > 0 ? ` · ${granted} mois gratuit${granted > 1 ? 's' : ''} déjà débloqué${granted > 1 ? 's' : ''}` : ''} · encore ${remaining} pour le prochain mois gratuit.`;
   })();
+
+  if (statut === 'en_attente') {
+    (async () => {
+      const el = document.getElementById('pending-request-details');
+      if (!el) return;
+      try {
+        let latest = null;
+        if (demoMode) {
+          latest = [...demoRequests].filter(r => r.landlordId === currentUser.uid).sort((a, b) => (b.dateCreation || '').localeCompare(a.dateCreation || ''))[0];
+        } else {
+          const snap = await db.collection('subscriptionRequests').where('landlordId', '==', currentUser.uid).get();
+          latest = snap.docs.map(d => d.data()).sort((a, b) => (b.dateCreation || '').localeCompare(a.dateCreation || ''))[0];
+        }
+        if (!latest) { el.textContent = ''; return; }
+        el.innerHTML = `Demande du ${esc(latest.dateCreation || '—')} · Plan ${esc(PLANS[latest.plan]?.nom || latest.plan)} · Réf. Wave : ${esc(latest.waveReference || '—')}`;
+      } catch (err) { el.textContent = ''; }
+    })();
+  }
 }
 
 function openPlanRequestModal(planKey){
   const pl = PLANS[planKey];
   if (!pl) return;
-  const ref = `CARNET-${currentUser.uid.slice(0, 5).toUpperCase()}-${planKey.toUpperCase()}`;
+  const ref = `LOYERPRO-${currentUser.uid.slice(0, 5).toUpperCase()}-${planKey.toUpperCase()}`;
   openModal(`Passer au plan ${pl.nom}`, `
     <div class="pay-box">
       <p>Paiement de <strong>${pl.prix.toLocaleString('fr-FR')} FCFA</strong> via Wave :</p>
-      <a href="${pl.waveLink}" target="_blank" rel="noopener" class="btn-wave">💳 Payer ${pl.prix.toLocaleString('fr-FR')} FCFA avec Wave</a>
-      <p class="dim" style="margin-top:10px;">Reviens confirmer ci-dessous une fois le paiement effectué. Référence : <span class="ref">${ref}</span></p>
-      <p class="dim">Ton abonnement sera activé après vérification manuelle du paiement (sous 24h).</p>
+      <a href="${pl.waveLink}" target="_blank" rel="noopener" class="btn-wave">Payer ${pl.prix.toLocaleString('fr-FR')} FCFA avec Wave</a>
+      <p class="dim" style="margin-top:10px;">Une fois le paiement fait, ouvre la transaction dans l'appli Wave et copie sa référence ci-dessous.</p>
     </div>
+    <label>Référence de la transaction Wave<input name="waveReference" required placeholder="Ex : TXN4F8C2A91"></label>
     <input type="hidden" name="plan" value="${planKey}">
     <input type="hidden" name="reference" value="${ref}">
   `, async fd => {
+    const notifyWin = window.open('', '_blank');
+    const waveReference = fd.get('waveReference').trim();
+    const payload = {
+      landlordId: currentUser.uid, landlordNom: landlordData?.nom || currentUser.email, landlordEmail: currentUser.email,
+      landlordTelephone: landlordData?.telephone || '', plan: fd.get('plan'), montant: pl.prix,
+      reference: fd.get('reference'), waveReference, statut: 'en_attente', dateCreation: new Date().toISOString().slice(0, 10)
+    };
     try {
       if (demoMode) {
-        demoRequests.push({
-          id: demoId(), landlordId: currentUser.uid, landlordNom: landlordData?.nom || currentUser.email,
-          landlordEmail: currentUser.email, plan: fd.get('plan'), montant: pl.prix, reference: fd.get('reference'),
-          statut: 'en_attente', dateCreation: new Date().toISOString().slice(0, 10)
-        });
+        demoRequests.push({ id: demoId(), ...payload });
         landlordData.abonnementStatut = 'en_attente';
       } else {
-        await db.collection('subscriptionRequests').add({
-          landlordId: currentUser.uid,
-          landlordNom: landlordData?.nom || currentUser.email,
-          landlordEmail: currentUser.email,
-          plan: fd.get('plan'),
-          montant: pl.prix,
-          reference: fd.get('reference'),
-          statut: 'en_attente',
-          dateCreation: new Date().toISOString().slice(0, 10)
-        });
+        await db.collection('subscriptionRequests').add(payload);
         await db.collection('landlords').doc(currentUser.uid).update({ abonnementStatut: 'en_attente' });
       }
-      closeModal(); toast('Demande envoyée, en attente de validation'); router();
-    } catch (err) { toast('Erreur : ' + err.message, 'err'); }
+      closeModal(); toast('Demande envoyée — un message va s\'ouvrir pour prévenir le support'); router();
+      const message = `Nouvelle demande d'abonnement Loyer Pro\nPropriétaire : ${payload.landlordNom}\nPlan : ${pl.nom} (${pl.prix.toLocaleString('fr-FR')} FCFA)\nRéférence Wave : ${waveReference}\nRéférence interne : ${payload.reference}`;
+      const link = `https://wa.me/225501229674?text=${encodeURIComponent(message)}`;
+      if (notifyWin) notifyWin.location.href = link; else window.open(link, '_blank');
+    } catch (err) {
+      if (notifyWin) notifyWin.close();
+      toast('Erreur : ' + err.message, 'err');
+    }
   }, 'J\'ai payé, je confirme');
 }
 
@@ -2083,7 +2196,7 @@ function openPlanRequestModal(planKey){
 /* ======================================================
    ASSISTANT IA (Gemini — clé unique partagée)
    Remplace REMPLACE_MOI par ta clé Gemini (aistudio.google.com)
-   ⚠️ Cette clé sera visible dans le code par n'importe qui.
+   Attention : cette clé sera visible dans le code par n'importe qui.
    Restreins-la par domaine (HTTP referrer) dans Google Cloud Console.
    ====================================================== */
 const GEMINI_MODEL = 'gemini-2.5-flash';
@@ -2122,9 +2235,10 @@ function buildDataContext(){
 async function askGeminiAssistant(question){
   if (!GEMINI_API_KEY || GEMINI_API_KEY === 'REMPLACE_MOI') throw new Error('Clé API Gemini non configurée dans le code.');
   const context = buildDataContext();
+  const nomProprietaire = landlordData?.nom || '';
   const body = {
     system_instruction: {
-      parts: [{ text: `Tu es l'assistant intégré à Loyer Pro, une app de gestion locative pour des propriétaires en Côte d'Ivoire. Réponds en français, de façon concise et directe, en te basant UNIQUEMENT sur les données ci-dessous. Si l'information n'y est pas, dis-le clairement plutôt que d'inventer.\n\nDonnées actuelles du propriétaire :\n${context}` }]
+      parts: [{ text: `Tu es l'assistant intégré à Loyer Pro, une app de gestion locative pour des propriétaires en Côte d'Ivoire. Tu parles avec ${nomProprietaire || 'le propriétaire'} — adresse-toi à lui/elle par son prénom naturellement de temps en temps, sans exagérer. Réponds en français, de façon concise et directe, en te basant UNIQUEMENT sur les données ci-dessous. Si l'information n'y est pas, dis-le clairement plutôt que d'inventer.\n\nDonnées actuelles du propriétaire :\n${context}` }]
     },
     contents: [{ role: 'user', parts: [{ text: question }] }]
   };
@@ -2154,7 +2268,7 @@ function renderAssistant(){
     </div>
     ${configured && access ? `
     <div class="card" id="chat-window" style="max-height:50vh;overflow-y:auto;">
-      ${assistantMessages.length === 0 ? `<p class="empty">Essaie : "Qui est en retard ce mois ?" ou "Quel est mon revenu ce mois-ci ?"</p>` :
+      ${assistantMessages.length === 0 ? `<p class="empty">${landlordData?.nom ? `Salut ${esc((landlordData.nom || '').split(' ')[0])}, ` : ''}Essaie : "Qui est en retard ce mois ?" ou "Quel est mon revenu ce mois-ci ?"</p>` :
         assistantMessages.map(m => `<div class="chat-msg ${m.role}">${esc(m.text)}</div>`).join('')}
     </div>
     <div class="row-actions">
@@ -2237,6 +2351,8 @@ function onViewClick(e){
     'delete-tenant': () => deleteTenant(id),
     'add-payment': () => openPaymentModal(),
     'delete-payment': () => deletePayment(id),
+    'confirm-pending-payment': () => confirmPendingPayment(id),
+    'reject-pending-payment': () => rejectPendingPayment(id),
     'download-receipt': () => generateReceipt(id),
     'gen-contract': () => generateContract(id),
     'share-portal': () => shareTenantPortal(id),
@@ -2246,6 +2362,8 @@ function onViewClick(e){
     'import-backup': () => triggerRestore(),
     'add-maintenance': () => openMaintenanceModal(),
     'delete-maintenance': () => deleteMaintenance(id),
+    'confirm-pending-report': () => confirmPendingReport(id),
+    'reject-pending-report': () => rejectPendingReport(id),
     'add-expense': () => openExpenseModal(),
     'delete-expense': () => deleteExpense(id),
     'send-assistant': () => sendAssistantMessage(),
@@ -2293,11 +2411,21 @@ function attachListeners(){
     cache.expenses = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     router();
   }, err => toast('Erreur de synchronisation : ' + err.message, 'err')));
+
+  unsubscribers.push(db.collection('pendingPayments').where('landlordId', '==', currentUser.uid).where('statut', '==', 'en_attente').onSnapshot(snap => {
+    cache.pendingPayments = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    router();
+  }, err => toast('Erreur de synchronisation : ' + err.message, 'err')));
+
+  unsubscribers.push(db.collection('pendingMaintenance').where('landlordId', '==', currentUser.uid).where('statut', '==', 'nouveau').onSnapshot(snap => {
+    cache.pendingMaintenanceReports = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    router();
+  }, err => toast('Erreur de synchronisation : ' + err.message, 'err')));
 }
 function detachListeners(){
   unsubscribers.forEach(u => u());
   unsubscribers = [];
-  cache = { properties: [], tenants: [], payments: [], maintenance: [], buildings: [], expenses: [] };
+  cache = { properties: [], tenants: [], payments: [], maintenance: [], buildings: [], expenses: [], pendingPayments: [], pendingMaintenanceReports: [] };
   assistantMessages = [];
 }
 
@@ -2395,6 +2523,7 @@ if (auth) {
     detachListeners();
     document.getElementById('app-shell').classList.add('hidden');
     document.getElementById('auth-screen').classList.remove('hidden');
+    showRoleChooser();
   }
   });
 } else {
@@ -2402,6 +2531,21 @@ if (auth) {
 }
 
 /* ---------- Formulaires d'auth ---------- */
+function showRoleChooser(){
+  document.getElementById('role-chooser').classList.remove('hidden');
+  document.getElementById('tenant-instructions').classList.add('hidden');
+  document.getElementById('owner-auth').classList.add('hidden');
+}
+document.getElementById('role-owner-btn').addEventListener('click', () => {
+  document.getElementById('role-chooser').classList.add('hidden');
+  document.getElementById('owner-auth').classList.remove('hidden');
+});
+document.getElementById('role-tenant-btn').addEventListener('click', () => {
+  document.getElementById('role-chooser').classList.add('hidden');
+  document.getElementById('tenant-instructions').classList.remove('hidden');
+});
+document.querySelectorAll('.back-to-role').forEach(btn => btn.addEventListener('click', showRoleChooser));
+
 document.querySelectorAll('.auth-tab').forEach(tab => {
   tab.addEventListener('click', () => {
     document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));

@@ -45,6 +45,16 @@ td.num{ text-align:right; font-family:'IBM Plex Mono',monospace; }
 .sig-actions{ display:flex; gap:10px; margin-top:12px; }
 #sig-canvas{ width:100%; height:150px; border:1px dashed var(--border); border-radius:10px; touch-action:none; background:#fff; display:block; }
 .signed-box{ text-align:center; padding:8px 0; color:var(--success); font-weight:600; font-size:14px; }
+.action-row{ display:flex; gap:8px; flex-wrap:wrap; }
+.btn-wa{ background:#25D366; color:#fff; border-color:#25D366; }
+.field{ display:block; margin:10px 0; }
+.field label{ display:block; font-size:12px; color:var(--text-dim); margin-bottom:4px; }
+.field input, .field select, .field textarea{
+  width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:8px; font-family:inherit; font-size:14px; background:var(--surface); color:var(--text);
+}
+.field textarea{ resize:vertical; min-height:70px; }
+.inline-form{ margin-top:12px; padding-top:12px; border-top:1px solid var(--border); }
+.pending-note{ background:var(--warn-soft); color:var(--warn); font-size:13px; padding:9px 12px; border-radius:8px; margin-top:8px; }
 </style>
 </head>
 <body>
@@ -55,6 +65,7 @@ td.num{ text-align:right; font-family:'IBM Plex Mono',monospace; }
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function fmtFCFA(n){ return `${Number(n || 0).toLocaleString('fr-FR')} FCFA`; }
@@ -91,7 +102,9 @@ if (!token) {
     const payments = (d.payments || []).slice().reverse();
     const statutBadge = d.statut === 'actif' ? `<span class="badge actif">Actif</span>` : `<span class="badge parti">Parti</span>`;
     const sigSection = signed
-      ? `<div class="card"><h2>Contrat de bail</h2><div class="signed-box">✅ Signé le ${new Date(signed.signatureDate).toLocaleDateString('fr-FR')}</div></div>`
+      ? `<div class="card"><h2>Contrat de bail</h2><div class="signed-box">Signé le ${new Date(signed.signatureDate).toLocaleDateString('fr-FR')}</div>
+          <div class="action-row" style="justify-content:center;margin-top:10px;"><button type="button" class="btn" id="contract-download">Télécharger mon contrat</button></div>
+        </div>`
       : `<div class="card">
           <h2>Signer mon contrat</h2>
           <p class="dim">Dessine ta signature ci-dessous avec le doigt.</p>
@@ -101,9 +114,27 @@ if (!token) {
             <button type="button" class="btn btn-primary" id="sig-submit">Valider ma signature</button>
           </div>
         </div>`;
+    const actionsCard = `<div class="card">
+      <h2>Actions rapides</h2>
+      <div class="action-row">
+        <button type="button" class="btn btn-primary" id="btn-declare-payment">J'ai payé mon loyer</button>
+        <button type="button" class="btn" id="btn-report-issue">Signaler un problème</button>
+        ${d.landlordTelephone ? `<a class="btn btn-wa" href="${waLinkForPortal(d.landlordTelephone, `Bonjour ${d.landlordNom || ''}, ici ${d.tenantNom}.`)}" target="_blank" rel="noopener">Contacter mon bailleur</a>` : ''}
+      </div>
+      <div class="inline-form" id="form-declare-payment" style="display:none;">
+        <div class="field"><label>Mois concerné</label><input type="month" id="declare-mois" value="${new Date().toISOString().slice(0, 7)}"></div>
+        <div class="field"><label>Montant payé (FCFA)</label><input type="number" id="declare-montant" value="${d.loyerMensuel || ''}"></div>
+        <button type="button" class="btn btn-primary" id="declare-payment-submit">Envoyer</button>
+      </div>
+      <div class="inline-form" id="form-report-issue" style="display:none;">
+        <div class="field"><label>Quel est le problème ?</label><input type="text" id="report-titre" placeholder="Ex : Fuite d'eau"></div>
+        <div class="field"><label>Détails (optionnel)</label><textarea id="report-description" placeholder="Décris le problème..."></textarea></div>
+        <button type="button" class="btn btn-primary" id="report-issue-submit">Envoyer</button>
+      </div>
+    </div>`;
     showState(`
       <div class="card">
-        <h2>Bonjour ${esc(d.tenantNom)} 👋</h2>
+        <h2>Bonjour ${esc(d.tenantNom)}</h2>
         <p class="dim">${esc(d.propertyNom || '—')}${d.propertyQuartier ? ' · ' + esc(d.propertyQuartier) : ''}</p>
         <div style="margin-top:10px;">
           <div class="info-row"><span>Loyer mensuel</span><span>${fmtFCFA(d.loyerMensuel)}</span></div>
@@ -112,18 +143,31 @@ if (!token) {
           <div class="info-row"><span>Statut</span><span>${statutBadge}</span></div>
         </div>
       </div>
+      ${actionsCard}
       ${sigSection}
       <div class="card">
         <h2>Historique des paiements</h2>
         ${payments.length === 0 ? `<p class="empty">Aucun paiement enregistré pour l'instant.</p>` : `
         <table>
-          <thead><tr><th>Mois</th><th>Méthode</th><th class="num">Montant</th></tr></thead>
-          <tbody>${payments.map(p => `<tr><td>${esc(p.mois)}</td><td>${esc(p.methode || '—')}</td><td class="num">${fmtFCFA(p.montant)}</td></tr>`).join('')}</tbody>
+          <thead><tr><th>Mois</th><th>Méthode</th><th class="num">Montant</th><th></th></tr></thead>
+          <tbody>${payments.map((p, i) => `<tr><td>${esc(p.mois)}</td><td>${esc(p.methode || '—')}</td><td class="num">${fmtFCFA(p.montant)}</td><td><button type="button" class="btn" data-receipt-idx="${i}" style="padding:5px 9px;font-size:12px;">Reçu</button></td></tr>`).join('')}</tbody>
         </table>`}
       </div>
       <p class="footer-note">Cet espace est fourni par ${esc(d.landlordNom || 'ton bailleur')} via Loyer Pro.<br>Dernière mise à jour : ${d.lastUpdated ? new Date(d.lastUpdated).toLocaleDateString('fr-FR') : '—'}. Page en lecture seule.</p>
     `);
     if (!signed) setupSignaturePad(db, token);
+    document.getElementById('contract-download')?.addEventListener('click', () => downloadContract(d, signed ? signed.signature : null));
+    document.getElementById('btn-declare-payment')?.addEventListener('click', () => {
+      document.getElementById('form-declare-payment').style.display = 'block';
+    });
+    document.getElementById('btn-report-issue')?.addEventListener('click', () => {
+      document.getElementById('form-report-issue').style.display = 'block';
+    });
+    document.getElementById('declare-payment-submit')?.addEventListener('click', () => submitPendingPayment(db, d));
+    document.getElementById('report-issue-submit')?.addEventListener('click', () => submitPendingReport(db, d));
+    document.querySelectorAll('[data-receipt-idx]').forEach(btn => {
+      btn.addEventListener('click', () => downloadReceipt(d, payments[Number(btn.getAttribute('data-receipt-idx'))]));
+    });
   }).catch(() => {
     showState(`<div class="state-box">Impossible de charger tes informations pour le moment. Réessaie dans un instant.</div>`);
   });
@@ -159,6 +203,104 @@ function setupSignaturePad(db, token){
       .then(() => location.reload())
       .catch(() => { alert('Erreur — réessaie dans un instant.'); btn.disabled = false; btn.textContent = 'Valider ma signature'; });
   });
+}
+function waLinkForPortal(tel, message){
+  if (!tel) return '#';
+  let digits = String(tel).replace(/\D/g, '');
+  if (!digits) return '#';
+  if (digits.startsWith('00')) digits = digits.slice(2);
+  if (!digits.startsWith('225')) { if (digits.startsWith('0')) digits = digits.slice(1); digits = '225' + digits; }
+  return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
+}
+function submitPendingPayment(db, d){
+  const mois = document.getElementById('declare-mois').value;
+  const montant = Number(document.getElementById('declare-montant').value || 0);
+  if (!mois || !montant) { alert('Merci de remplir le mois et le montant.'); return; }
+  const btn = document.getElementById('declare-payment-submit');
+  btn.disabled = true; btn.textContent = 'Envoi...';
+  db.collection('pendingPayments').add({
+    landlordId: d.landlordId, tenantId: d.tenantId, propertyId: d.propertyId || '', tenantNom: d.tenantNom,
+    montant, moisConcerne: mois, statut: 'en_attente', dateDeclaration: new Date().toISOString().slice(0, 10)
+  }).then(() => {
+    document.getElementById('form-declare-payment').innerHTML = `<p class="pending-note">Paiement déclaré — en attente de confirmation de ton bailleur.</p>`;
+  }).catch(() => { alert('Erreur — réessaie dans un instant.'); btn.disabled = false; btn.textContent = 'Envoyer'; });
+}
+function submitPendingReport(db, d){
+  const titre = document.getElementById('report-titre').value.trim();
+  const description = document.getElementById('report-description').value.trim();
+  if (!titre) { alert('Décris au moins brièvement le problème.'); return; }
+  const btn = document.getElementById('report-issue-submit');
+  btn.disabled = true; btn.textContent = 'Envoi...';
+  db.collection('pendingMaintenance').add({
+    landlordId: d.landlordId, tenantId: d.tenantId, propertyId: d.propertyId || '', tenantNom: d.tenantNom,
+    titre, description, statut: 'nouveau', dateDeclaration: new Date().toISOString().slice(0, 10)
+  }).then(() => {
+    document.getElementById('form-report-issue').innerHTML = `<p class="pending-note">Signalement envoyé à ton bailleur.</p>`;
+  }).catch(() => { alert('Erreur — réessaie dans un instant.'); btn.disabled = false; btn.textContent = 'Envoyer'; });
+}
+function downloadReceipt(d, p){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a5' });
+  const W = doc.internal.pageSize.getWidth();
+  let y = 18;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.text('Loyer Pro', 14, y);
+  doc.setFontSize(10); doc.setFont('helvetica', 'normal'); doc.setTextColor(120); doc.text('Gestion locative', 14, y + 5); doc.setTextColor(0);
+  doc.setFontSize(12); doc.setFont('helvetica', 'bold'); doc.text('QUITTANCE DE LOYER', W - 14, y, { align: 'right' });
+  y += 14; doc.setDrawColor(180); doc.line(14, y, W - 14, y); y += 10;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(11);
+  const line = (label, value) => { doc.setTextColor(120); doc.text(label, 14, y); doc.setTextColor(0); doc.text(String(value ?? '—'), 70, y); y += 7; };
+  line('Bailleur', d.landlordNom || '—');
+  line('Locataire', d.tenantNom || '—');
+  line('Bien', d.propertyNom || '—');
+  line('Mois concerné', p.mois);
+  line('Méthode', p.methode || '—');
+  line('Date du paiement', p.date || '—');
+  y += 4; doc.setDrawColor(200); doc.line(14, y, W - 14, y); y += 12;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(14);
+  doc.text('Montant reçu :', 14, y); doc.text(fmtFCFA(p.montant), W - 14, y, { align: 'right' });
+  doc.save(`quittance_${(d.tenantNom || 'locataire').replace(/\s+/g, '_')}_${p.mois}.pdf`);
+}
+function downloadContract(d, signatureDataUrl){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const W = doc.internal.pageSize.getWidth();
+  const H = doc.internal.pageSize.getHeight();
+  const marginX = 18; const maxWidth = W - marginX * 2;
+  let y = 20;
+  const ensureSpace = needed => { if (y + needed > H - 20) { doc.addPage(); y = 20; } };
+  const addArticle = (heading, body) => {
+    ensureSpace(10); doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.text(heading, marginX, y); y += 6;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+    doc.splitTextToSize(body, maxWidth).forEach(line2 => { ensureSpace(6); doc.text(line2, marginX, y); y += 5.5; });
+    y += 4;
+  };
+  const duree = d.dureeBail || 12;
+  let dateFin = '—';
+  if (d.dateEntree) { const dt = new Date(d.dateEntree); dt.setMonth(dt.getMonth() + duree); dateFin = dt.toISOString().slice(0, 10); }
+
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(15);
+  doc.text("CONTRAT DE BAIL D'HABITATION", W / 2, y, { align: 'center' }); y += 7;
+  doc.setFont('helvetica', 'italic'); doc.setFontSize(8); doc.setTextColor(140);
+  doc.splitTextToSize("Modèle indicatif généré via Loyer Pro — ne remplace pas un contrat rédigé ou validé par un professionnel du droit.", maxWidth).forEach(line2 => { doc.text(line2, W / 2, y, { align: 'center' }); y += 4; });
+  doc.setTextColor(0); y += 6;
+
+  addArticle('Entre les soussignés :', `Le Bailleur : ${d.landlordNom || '—'}, ci-après désigné « le Bailleur », et le Locataire : ${d.tenantNom || '—'}, ci-après désigné « le Locataire », il a été convenu ce qui suit :`);
+  addArticle('Article 1 — Désignation du bien loué', `Le Bailleur donne à bail au Locataire, qui accepte, le bien suivant : ${d.propertyNom || '—'}, situé à ${d.propertyQuartier || '—'}.`);
+  addArticle('Article 2 — Durée du bail', `Le présent bail est conclu pour une durée de ${duree} mois, prenant effet le ${d.dateEntree || '—'} et se terminant le ${dateFin}, sauf reconduction ou résiliation anticipée.`);
+  addArticle('Article 3 — Loyer et modalités de paiement', `Le loyer mensuel est fixé à ${fmtFCFA(d.loyerMensuel)}, payable d'avance le ${d.jourEcheance || 5} de chaque mois.`);
+  addArticle('Article 4 — Dépôt de garantie', `Un dépôt de garantie de ${fmtFCFA(d.caution)} est versé par le Locataire à la signature. Il sera restitué en fin de bail, déduction faite des sommes dues ou réparations locatives à la charge du Locataire.`);
+  addArticle('Article 5 — Obligations du Locataire', "Le Locataire s'engage à payer le loyer aux échéances convenues, à user paisiblement du logement, à l'entretenir en bon état, et à ne pas le transformer sans accord écrit du Bailleur.");
+  addArticle('Article 6 — Obligations du Bailleur', "Le Bailleur s'engage à délivrer un logement décent et en bon état d'usage, et à assurer au Locataire une jouissance paisible des lieux.");
+  addArticle('Article 7 — Résiliation', "Le présent bail peut être résilié par chacune des parties moyennant un préavis d'un (1) mois notifié par écrit, sauf manquement grave.");
+
+  ensureSpace(45); y += 8;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+  doc.text('Signé électroniquement le ' + new Date().toLocaleDateString('fr-FR'), marginX, y);
+  y += 10;
+  doc.text('Le Bailleur', marginX, y);
+  doc.text('Le Locataire :', W - 62, y);
+  if (signatureDataUrl) { try { doc.addImage(signatureDataUrl, 'PNG', W - 62, y + 3, 42, 18); } catch (e) {} }
+  doc.save(`contrat_bail_${(d.tenantNom || 'locataire').replace(/\s+/g, '_')}.pdf`);
 }
 </script>
 </body>
